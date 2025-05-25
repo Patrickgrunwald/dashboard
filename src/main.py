@@ -11,6 +11,9 @@ import time
 import re
 import caldav
 from caldav.elements import dav, cdav
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))  # DON'T CHANGE THIS !!!
 
 app = Flask(__name__)
 
@@ -58,7 +61,6 @@ def get_calendar_events():
     events = []
     
     try:
-        print("Versuche, Verbindung zum iCloud-Kalender herzustellen...")
         # Verbindung zum iCloud CalDAV-Server herstellen
         client = caldav.DAVClient(
             url=ICLOUD_CALDAV_URL,
@@ -66,18 +68,11 @@ def get_calendar_events():
             password=ICLOUD_APP_PASSWORD
         )
         
-        print("Verbindung hergestellt, rufe Hauptkalender ab...")
         # Hauptkalender des Benutzers abrufen
         principal = client.principal()
         
-        print("Hauptkalender abgerufen, suche nach verfügbaren Kalendern...")
         # Alle verfügbaren Kalender abrufen
         calendars = principal.calendars()
-        print(f"Gefundene Kalender: {len(calendars)}")
-        
-        # Kalendernamen ausgeben
-        for cal in calendars:
-            print(f"Kalender gefunden: {cal.name}")
         
         # Aktuelle Zeit und Zeitraum für Ereignisse festlegen
         now = datetime.now()
@@ -105,11 +100,8 @@ def get_calendar_events():
         for calendar in calendars:
             calendar_name = calendar.name.lower() if calendar.name else ""
             
-            print(f"Prüfe Kalender: {calendar_name}")
-            
             # Nur die gewünschten Kalender verwenden
             if "familie" in calendar_name or "patrick" in calendar_name or "icloud" in calendar_name:
-                print(f"Verwende Kalender: {calendar_name}")
                 
                 # Icon basierend auf Kalendername festlegen
                 if "familie" in calendar_name:
@@ -121,9 +113,7 @@ def get_calendar_events():
                 
                 try:
                     # Ereignisse im Zeitraum abrufen
-                    print(f"Suche Ereignisse von {start_date} bis {end_date}")
                     calendar_events = calendar.date_search(start=start_date, end=end_date)
-                    print(f"Gefundene Ereignisse: {len(calendar_events)}")
                     
                     for event in calendar_events:
                         try:
@@ -135,7 +125,6 @@ def get_calendar_events():
                                 if component.name == "VEVENT":
                                     # Titel des Ereignisses
                                     summary = str(component.get('summary', 'Unbekanntes Ereignis'))
-                                    print(f"Ereignis gefunden: {summary}")
                                     
                                     # Startzeit des Ereignisses
                                     dtstart = component.get('dtstart').dt
@@ -181,11 +170,8 @@ def get_calendar_events():
         # Ereignisse nach Datum sortieren
         events.sort(key=lambda x: x["time"])
         
-        print(f"Insgesamt gefundene Ereignisse: {len(events)}")
-        
         # Wenn keine Ereignisse gefunden wurden, Beispieldaten zurückgeben
         if not events:
-            print("Keine Kalenderereignisse gefunden, verwende Beispieldaten")
             events = get_example_calendar_events()
             
     except Exception as e:
@@ -388,4 +374,4 @@ def get_data():
     return jsonify(data)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000)
