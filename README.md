@@ -4,22 +4,22 @@ Ein interaktives Dashboard, das Kalenderereignisse, Wetterdaten und Nachrichten 
 
 ## Funktionen
 
-- Anzeige von iCloud-Kalenderereignissen
-- Aktuelle Wetterdaten und Vorhersage
-- Aktuelle Nachrichten
-- Automatische Aktualisierung der Daten
+* Anzeige von iCloud-Kalenderereignissen
+* Aktuelle Wetterdaten und Vorhersage
+* Aktuelle Nachrichten
+* Automatische Aktualisierung der Daten
 
 ## Installation
 
 1. Repository klonen:
 ```bash
-git clone https://github.com/IHR_USERNAME/dashboard.git
+git clone https://github.com/Patrickgrunwald/dashboard.git
 cd dashboard
 ```
 
 2. Virtuelle Umgebung erstellen und aktivieren:
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate  # Für Unix/MacOS
 # oder
 .venv\Scripts\activate  # Für Windows
@@ -42,7 +42,7 @@ OPENWEATHERMAP_API_KEY=ihr-api-key
 
 1. Server starten:
 ```bash
-python app.py
+python3 app.py
 ```
 
 2. Dashboard im Browser öffnen:
@@ -52,8 +52,8 @@ http://localhost:5001
 
 ## Technologien
 
-- Python/Flask
-- JavaScript
-- iCloud CalDAV API
-- OpenWeatherMap API
-- RSS Feeds für Nachrichten 
+* Python/Flask
+* JavaScript
+* iCloud CalDAV API
+* OpenWeatherMap API
+* RSS Feeds für Nachrichten
