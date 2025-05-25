@@ -186,7 +186,7 @@ def get_calendar_events():
                     print(f"Fehler beim Abrufen von Ereignissen aus Kalender {calendar_name}: {e}")
         
         # Ereignisse nach Datum sortieren
-        events.sort(key=lambda x: x["time"], reverse=True)
+        events.sort(key=lambda x: datetime.strptime(x["time"].split()[0], "%d.%m.%Y"), reverse=True)
         
         print(f"Insgesamt gefundene Ereignisse: {len(events)}")
         
@@ -209,37 +209,37 @@ def get_example_calendar_events():
     example_events = [
         {
             "title": "Keaz Start",
-            "time": f"{WOCHENTAGE[0]} um 14:30 Uhr",
+            "time": f"{current_date.strftime('%d.%m.%Y')} {WOCHENTAGE[0]} um 14:30 Uhr",
             "icon": "👤"
         },
         {
             "title": "Harry Durst",
-            "time": f"{WOCHENTAGE[0]} um 17:00 Uhr",
+            "time": f"{current_date.strftime('%d.%m.%Y')} {WOCHENTAGE[0]} um 17:00 Uhr",
             "icon": "👤"
         },
         {
             "title": "Inolab Pforzheim 10:30",
-            "time": "Juni 2.",
+            "time": f"{current_date.strftime('%d.%m.%Y')} Juni 2.",
             "icon": "👤"
         },
         {
             "title": "Mama hab dich lieb",
-            "time": "Juni 2.",
+            "time": f"{current_date.strftime('%d.%m.%Y')} Juni 2.",
             "icon": "👪"
         },
         {
             "title": "Velly Blue meets Adstrong",
-            "time": "Juni 3.",
+            "time": f"{current_date.strftime('%d.%m.%Y')} Juni 3.",
             "icon": "👤"
         },
         {
             "title": "Hochzeit Silke Follner",
-            "time": "Juni 6.",
+            "time": f"{current_date.strftime('%d.%m.%Y')} Juni 6.",
             "icon": "🎵"
         },
         {
             "title": "TikTok at Cannes 2025",
-            "time": "Juni 16.",
+            "time": f"{current_date.strftime('%d.%m.%Y')} Juni 16.",
             "icon": "👤"
         }
     ]
