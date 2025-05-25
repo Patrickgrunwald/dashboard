@@ -11,16 +11,20 @@ import time
 import re
 import caldav
 from caldav.elements import dav, cdav
+from dotenv import load_dotenv
+
+# Lade Umgebungsvariablen
+load_dotenv()
 
 app = Flask(__name__)
 
 # iCloud Kalender Konfiguration
-ICLOUD_EMAIL = "patricklevart@me.com"
-ICLOUD_APP_PASSWORD = "xgrw-qssx-ruch-cbcd"
+ICLOUD_EMAIL = os.getenv('ICLOUD_EMAIL', "patricklevart@me.com")
+ICLOUD_APP_PASSWORD = os.getenv('ICLOUD_APP_PASSWORD', "xgrw-qssx-ruch-cbcd")
 ICLOUD_CALDAV_URL = "https://caldav.icloud.com"
 
 # OpenWeatherMap API Konfiguration
-OPENWEATHERMAP_API_KEY = "0a2a868ed80b8df9e7308888e0c387cf"
+OPENWEATHERMAP_API_KEY = os.getenv('OPENWEATHERMAP_API_KEY', "0a2a868ed80b8df9e7308888e0c387cf")
 
 # Deutsche Wochentage und Monate für Datumsformatierung
 WOCHENTAGE = {
@@ -261,8 +265,9 @@ def get_weather_data():
             print(f"API Fehler: {error_msg}")
             raise Exception(f"API Fehler: {error_msg}")
         
-        # Aktuelle Zeit
-        current_time = datetime.now().strftime("%H:%M")
+        # Aktuelle Zeit mit Zeitzone
+        tz = pytz.timezone('Europe/Berlin')
+        current_time = datetime.now(tz).strftime("%H:%M")
         print(f"Aktuelle Zeit: {current_time}")
         
         # Aktuelle Wetterdaten
@@ -284,14 +289,14 @@ def get_weather_data():
         print(f"Formatiertes Wetter: {weather_data['current']}")
         
         # Wettervorhersage für die nächsten 5 Tage
-        current_date = datetime.now().date()
+        current_date = datetime.now(tz).date()
         processed_dates = set()
         
         # Sortiere die Vorhersagen nach Datum
         sorted_forecasts = sorted(data['list'], key=lambda x: x['dt'])
         
         for item in sorted_forecasts:
-            forecast_date = datetime.fromtimestamp(item['dt']).date()
+            forecast_date = datetime.fromtimestamp(item['dt'], tz).date()
             
             # Nur einen Eintrag pro Tag und nur für die nächsten 5 Tage
             if forecast_date > current_date and forecast_date not in processed_dates and len(processed_dates) < 5:
@@ -299,11 +304,11 @@ def get_weather_data():
                 
                 # Finde die höchste und niedrigste Temperatur für diesen Tag
                 day_temps = [temp['main']['temp'] for temp in data['list'] 
-                           if datetime.fromtimestamp(temp['dt']).date() == forecast_date]
+                           if datetime.fromtimestamp(temp['dt'], tz).date() == forecast_date]
                 
                 # Bestimme das dominante Wetter für den Tag
                 day_weather = [temp['weather'][0]['main'].lower() for temp in data['list']
-                             if datetime.fromtimestamp(temp['dt']).date() == forecast_date]
+                             if datetime.fromtimestamp(temp['dt'], tz).date() == forecast_date]
                 dominant_weather = max(set(day_weather), key=day_weather.count)
                 
                 forecast_entry = {
@@ -328,8 +333,9 @@ def get_weather_data():
 
 def get_fallback_weather_data():
     """Liefert Fallback-Wetterdaten bei Fehlern."""
-    current_time = datetime.now().strftime("%H:%M")
-    current_date = datetime.now().date()
+    tz = pytz.timezone('Europe/Berlin')
+    current_time = datetime.now(tz).strftime("%H:%M")
+    current_date = datetime.now(tz).date()
     
     # Realistische Beispieldaten für Mühlacker
     weather_data = {
@@ -503,4 +509,5 @@ def get_data():
     return jsonify(data)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    port = int(os.environ.get('PORT', 5001))
+    app.run(host='0.0.0.0', port=port)

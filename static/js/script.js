@@ -3,13 +3,25 @@ function updateDateTime() {
     const now = new Date();
     
     // Datum formatieren
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const options = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        timeZone: 'Europe/Berlin'
+    };
     const dateStr = now.toLocaleDateString('de-DE', options);
     
     // Zeit formatieren
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const seconds = now.getSeconds().toString().padStart(2, '0');
+    const timeOptions = {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+        timeZone: 'Europe/Berlin'
+    };
+    const timeStr = now.toLocaleTimeString('de-DE', timeOptions);
+    const [hours, minutes, seconds] = timeStr.split(':');
     
     // DOM aktualisieren
     document.getElementById('current-date').textContent = dateStr;
@@ -97,11 +109,6 @@ function fetchDashboardData() {
     fetch('/api/data')
         .then(response => response.json())
         .then(data => {
-            // Datum und Uhrzeit aktualisieren
-            document.getElementById('current-date').textContent = data.datetime.date;
-            document.getElementById('current-time').textContent = data.datetime.time;
-            document.getElementById('current-seconds').textContent = data.datetime.seconds;
-            
             // Kalendereinträge anzeigen
             displayCalendarEntries(data.calendar);
             
@@ -193,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchDashboardData();
     
     // Daten alle 5 Sekunden aktualisieren (ohne Neuladen der Seite)
-    setInterval(fetchDashboardData, 5 * 1000);
+    setInterval(fetchDashboardData, 5000);
     
     // Seite alle 5 Minuten neu laden
     setupAutoRefresh();
