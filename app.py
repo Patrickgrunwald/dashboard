@@ -133,18 +133,26 @@ def get_calendar_events():
                                 if isinstance(dtstart, datetime) and dtstart.tzinfo is None:
                                     dtstart = dtstart.replace(tzinfo=pytz.UTC)
                                 
-                                # Für ganztägige Ereignisse oder Ereignisse in der Zukunft
-                                if all_day or (isinstance(dtstart, datetime) and dtstart.date() > now.date()):
-                                    # Datum formatieren
-                                    event_date = dtstart if isinstance(dtstart, date) else dtstart.date()
-                                    if event_date.month == now.month:
-                                        date_display = f"{MONATE[event_date.month]} {event_date.day}."
-                                    else:
-                                        date_display = f"{MONATE[event_date.month]} {event_date.day}."
-                                else:
-                                    # Zeit formatieren für Ereignisse am selben Tag
+                                # Datum und Zeit formatieren
+                                if isinstance(dtstart, datetime):
+                                    # Wenn es ein datetime-Objekt ist, zeige Datum und Uhrzeit
+                                    event_date = dtstart.date()
                                     time_str = dtstart.strftime("%H:%M")
-                                    date_display = f"{WOCHENTAGE[dtstart.weekday()]} um {time_str} Uhr"
+                                    if event_date == now.date():
+                                        date_display = f"Heute um {time_str} Uhr"
+                                    elif event_date == now.date() + timedelta(days=1):
+                                        date_display = f"Morgen um {time_str} Uhr"
+                                    else:
+                                        date_display = f"{WOCHENTAGE[dtstart.weekday()]}, {event_date.day}. {MONATE[event_date.month]} um {time_str} Uhr"
+                                else:
+                                    # Für ganztägige Ereignisse
+                                    event_date = dtstart
+                                    if event_date == now.date():
+                                        date_display = "Heute (ganztägig)"
+                                    elif event_date == now.date() + timedelta(days=1):
+                                        date_display = "Morgen (ganztägig)"
+                                    else:
+                                        date_display = f"{WOCHENTAGE[event_date.weekday()]}, {event_date.day}. {MONATE[event_date.month]} (ganztägig)"
                                 
                                 # Icon basierend auf Ereignistyp oder Kalendername festlegen
                                 icon = "📅"  # Standard-Icon
