@@ -1,6 +1,7 @@
 // Aktuelles Datum und Uhrzeit anzeigen
 function updateDateTime() {
     const now = new Date();
+    console.log('updateDateTime aufgerufen:', now.toISOString());
     
     // Datum formatieren
     const options = { 
@@ -107,19 +108,69 @@ function displayNewsData(news) {
 // Daten vom Server abrufen
 function fetchDashboardData() {
     fetch('/api/data')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
-            // Kalendereinträge anzeigen
-            displayCalendarEntries(data.calendar);
-            
-            // Wetterdaten anzeigen
-            displayWeatherData(data.weather);
-            
-            // Nachrichtendaten anzeigen
-            displayNewsData(data.news);
+            // Aktuelle Wetterdaten
+            const currentWeather = data.weather.current;
+            document.getElementById('temp-value').textContent = `${currentWeather.temperature}°C`;
+            document.getElementById('feels-like').textContent = `Gefühlt: ${currentWeather.feels_like}°C`;
+            document.getElementById('wind-speed').textContent = `${currentWeather.wind_speed} km/h`;
+            document.getElementById('wind-direction').textContent = currentWeather.wind_direction;
+            document.getElementById('weather-time').textContent = currentWeather.time;
+            document.getElementById('weather-icon').className = `weather-icon ${currentWeather.icon}`;
+
+            // Wettervorhersage
+            const forecastContainer = document.getElementById('forecast-container');
+            forecastContainer.innerHTML = '';
+            data.weather.forecast.forEach(day => {
+                const forecastDay = document.createElement('div');
+                forecastDay.className = 'forecast-day';
+                forecastDay.innerHTML = `
+                    <div class="forecast-date">${day.day}</div>
+                    <div class="forecast-temp">
+                        <span class="temp-day">${day.temp_day}°</span>
+                        <span class="temp-night">${day.temp_night}°</span>
+                    </div>
+                    <div class="forecast-icon ${day.icon}"></div>
+                `;
+                forecastContainer.appendChild(forecastDay);
+            });
+
+            // Kalenderereignisse
+            const eventsContainer = document.getElementById('events-container');
+            eventsContainer.innerHTML = '';
+            data.calendar.forEach(event => {
+                const eventElement = document.createElement('div');
+                eventElement.className = 'event';
+                eventElement.innerHTML = `
+                    <div class="event-time">${event.date} ${event.time}</div>
+                    <div class="event-title">${event.title}</div>
+                `;
+                eventsContainer.appendChild(eventElement);
+            });
+
+            // Nachrichten
+            const newsContainer = document.getElementById('news-container');
+            newsContainer.innerHTML = '';
+            data.news.forEach(news => {
+                const newsElement = document.createElement('div');
+                newsElement.className = 'news-item';
+                newsElement.innerHTML = `
+                    <div class="news-title">${news.title}</div>
+                    <div class="news-description">${news.description}</div>
+                `;
+                newsContainer.appendChild(newsElement);
+            });
         })
         .catch(error => {
-            console.error('Fehler beim Abrufen der Daten:', error);
+            console.error('Fehler beim Abrufen der Dashboard-Daten:', error);
+            document.getElementById('temp-value').textContent = '--';
+            document.getElementById('feels-like').textContent = 'Daten nicht verfügbar';
         });
 }
 

@@ -177,7 +177,7 @@ def get_calendar_events():
                                     # Ereignis zum Array hinzufügen
                                     events.append({
                                         "title": summary,
-                                        "time": date_display,
+                                        "time": f"{event_date.strftime('%d.%m.%Y')} {date_display}",
                                         "icon": icon
                                     })
                         except Exception as e:
