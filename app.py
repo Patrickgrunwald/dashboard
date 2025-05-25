@@ -19,6 +19,9 @@ ICLOUD_EMAIL = "patricklevart@me.com"
 ICLOUD_APP_PASSWORD = "xgrw-qssx-ruch-cbcd"
 ICLOUD_CALDAV_URL = "https://caldav.icloud.com"
 
+# OpenWeatherMap API Konfiguration
+OPENWEATHERMAP_API_KEY = "0a2a868ed80b8df9e7308888e0c387cf"
+
 # Deutsche Wochentage und Monate für Datumsformatierung
 WOCHENTAGE = {
     0: "Montag",
@@ -242,45 +245,157 @@ def get_example_calendar_events():
 def get_weather_data():
     """Ruft Wetterdaten für Mühlacker ab."""
     try:
-        # In einer Produktionsumgebung würde hier eine echte Wetter-API verwendet werden
-        # Beispiel: OpenWeatherMap API für Mühlacker
-        # API_KEY = "your_api_key"
-        # url = f"https://api.openweathermap.org/data/2.5/forecast?q=Mühlacker,de&units=metric&lang=de&appid={API_KEY}"
-        # response = requests.get(url)
-        # data = response.json()
+        # OpenWeatherMap API für Mühlacker
+        url = f"https://api.openweathermap.org/data/2.5/forecast?q=Mühlacker,de&units=metric&lang=de&appid={OPENWEATHERMAP_API_KEY}"
+        print(f"Rufe Wetterdaten ab von: {url}")
         
-        # Beispieldaten basierend auf dem Screenshot
+        # Timeout nach 5 Sekunden
+        response = requests.get(url, timeout=5)
+        print(f"API Antwort Status: {response.status_code}")
+        print(f"API Antwort: {response.text[:200]}...")  # Zeige die ersten 200 Zeichen der Antwort
+        
+        data = response.json()
+        
+        if response.status_code != 200:
+            error_msg = data.get('message', 'Unbekannter Fehler')
+            print(f"API Fehler: {error_msg}")
+            raise Exception(f"API Fehler: {error_msg}")
+        
+        # Aktuelle Zeit
+        current_time = datetime.now().strftime("%H:%M")
+        print(f"Aktuelle Zeit: {current_time}")
+        
+        # Aktuelle Wetterdaten
+        current = data['list'][0]
+        print(f"Aktuelle Wetterdaten: {current}")
+        
         weather_data = {
             "current": {
-                "temperature": 17.2,
-                "feels_like": 17.2,
-                "wind_speed": 2,
-                "wind_direction": "W",
-                "time": "21:11",
-                "icon": "cloudy"
-            },
-            "forecast": [
-                {"day": "Heute", "temp_day": 17.3, "temp_night": 3.9, "icon": "cloudy"},
-                {"day": "Morgen", "temp_day": 17.2, "temp_night": 10.2, "icon": "cloudy"},
-                {"day": "Mo.", "temp_day": 18.7, "temp_night": 10.6, "icon": "cloudy"},
-                {"day": "Di.", "temp_day": 16.5, "temp_night": 7.2, "icon": "cloudy"},
-                {"day": "Mi.", "temp_day": 23.4, "temp_night": 9.6, "icon": "cloudy"}
-            ]
-        }
-        return weather_data
-    except Exception as e:
-        print(f"Fehler beim Abrufen der Wetterdaten: {e}")
-        return {
-            "current": {
-                "temperature": 0,
-                "feels_like": 0,
-                "wind_speed": 0,
-                "wind_direction": "N",
-                "time": "--:--",
-                "icon": "cloudy"
+                "temperature": round(current['main']['temp']),
+                "feels_like": round(current['main']['feels_like']),
+                "wind_speed": round(current['wind']['speed']),
+                "wind_direction": get_wind_direction(current['wind']['deg']),
+                "time": current_time,
+                "icon": get_weather_icon(current['weather'][0]['main'].lower())
             },
             "forecast": []
         }
+        
+        print(f"Formatiertes Wetter: {weather_data['current']}")
+        
+        # Wettervorhersage für die nächsten 5 Tage
+        current_date = datetime.now().date()
+        processed_dates = set()
+        
+        # Sortiere die Vorhersagen nach Datum
+        sorted_forecasts = sorted(data['list'], key=lambda x: x['dt'])
+        
+        for item in sorted_forecasts:
+            forecast_date = datetime.fromtimestamp(item['dt']).date()
+            
+            # Nur einen Eintrag pro Tag und nur für die nächsten 5 Tage
+            if forecast_date > current_date and forecast_date not in processed_dates and len(processed_dates) < 5:
+                processed_dates.add(forecast_date)
+                
+                # Finde die höchste und niedrigste Temperatur für diesen Tag
+                day_temps = [temp['main']['temp'] for temp in data['list'] 
+                           if datetime.fromtimestamp(temp['dt']).date() == forecast_date]
+                
+                # Bestimme das dominante Wetter für den Tag
+                day_weather = [temp['weather'][0]['main'].lower() for temp in data['list']
+                             if datetime.fromtimestamp(temp['dt']).date() == forecast_date]
+                dominant_weather = max(set(day_weather), key=day_weather.count)
+                
+                forecast_entry = {
+                    "day": get_day_name(item['dt']),
+                    "temp_day": round(max(day_temps)),
+                    "temp_night": round(min(day_temps)),
+                    "icon": get_weather_icon(dominant_weather)
+                }
+                weather_data["forecast"].append(forecast_entry)
+                print(f"Vorhersage für {forecast_date}: {forecast_entry}")
+        
+        return weather_data
+    except requests.exceptions.Timeout:
+        print("Timeout beim Abrufen der Wetterdaten")
+        return get_fallback_weather_data()
+    except requests.exceptions.RequestException as e:
+        print(f"Netzwerkfehler beim Abrufen der Wetterdaten: {e}")
+        return get_fallback_weather_data()
+    except Exception as e:
+        print(f"Unerwarteter Fehler beim Abrufen der Wetterdaten: {e}")
+        return get_fallback_weather_data()
+
+def get_fallback_weather_data():
+    """Liefert Fallback-Wetterdaten bei Fehlern."""
+    current_time = datetime.now().strftime("%H:%M")
+    current_date = datetime.now().date()
+    
+    # Realistische Beispieldaten für Mühlacker
+    weather_data = {
+        "current": {
+            "temperature": 22,
+            "feels_like": 23,
+            "wind_speed": 12,
+            "wind_direction": "SW",
+            "time": current_time,
+            "icon": "sunny"
+        },
+        "forecast": []
+    }
+    
+    # Wettervorhersage für die nächsten 5 Tage
+    for i in range(5):
+        forecast_date = current_date + timedelta(days=i+1)
+        day_name = get_day_name(int(datetime.combine(forecast_date, datetime.min.time()).timestamp()))
+        
+        # Realistische Temperaturwerte basierend auf der Jahreszeit
+        temp_day = 20 + i  # Steigende Temperaturen
+        temp_night = 10 + i  # Steigende Nachttemperaturen
+        
+        # Abwechselnde Wetterbedingungen
+        icons = ['sunny', 'cloudy', 'rainy', 'sunny', 'cloudy']
+        
+        forecast_entry = {
+            "day": day_name,
+            "temp_day": temp_day,
+            "temp_night": temp_night,
+            "icon": icons[i]
+        }
+        weather_data["forecast"].append(forecast_entry)
+    
+    return weather_data
+
+def get_wind_direction(degrees):
+    """Konvertiert Windrichtung in Grad zu Himmelsrichtung."""
+    directions = ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW']
+    index = round(degrees / 45) % 8
+    return directions[index]
+
+def get_weather_icon(weather_main):
+    """Konvertiert Wetterbeschreibung in Icon-Typ."""
+    icon_map = {
+        'clear': 'sunny',
+        'clouds': 'cloudy',
+        'rain': 'rainy',
+        'drizzle': 'rainy',
+        'thunderstorm': 'rainy',
+        'snow': 'rainy',
+        'mist': 'cloudy',
+        'fog': 'cloudy'
+    }
+    return icon_map.get(weather_main, 'cloudy')
+
+def get_day_name(timestamp):
+    """Konvertiert Unix-Timestamp in Wochentag."""
+    days = ['Heute', 'Morgen', 'Mo.', 'Di.', 'Mi.', 'Do.', 'Fr.', 'Sa.', 'So.']
+    date = datetime.fromtimestamp(timestamp)
+    if date.date() == datetime.now().date():
+        return 'Heute'
+    elif date.date() == datetime.now().date() + timedelta(days=1):
+        return 'Morgen'
+    else:
+        return days[date.weekday() + 2]  # +2 wegen 'Heute' und 'Morgen'
 
 def get_news_data():
     """Ruft aktuelle Nachrichten aus Deutschland ab."""

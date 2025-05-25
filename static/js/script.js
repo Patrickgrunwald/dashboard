@@ -124,6 +124,63 @@ function setupAutoRefresh() {
     }, 5 * 60 * 1000); // 5 Minuten in Millisekunden
 }
 
+// Wetterdaten aktualisieren
+function updateWeather() {
+    fetch('/api/data')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Aktuelle Wetterdaten
+            const weather = data.weather;
+            
+            // Wind und Zeit
+            document.getElementById('wind-value').textContent = weather.current.wind_speed;
+            document.getElementById('weather-time').textContent = weather.current.time;
+            
+            // Temperatur
+            document.getElementById('temp-value').textContent = weather.current.temperature;
+            document.getElementById('feels-like').textContent = `Gefühlt ${weather.current.feels_like}°`;
+            
+            // Wetter-Icon
+            const iconContainer = document.getElementById('weather-icon');
+            iconContainer.innerHTML = ''; // Leere den Container zuerst
+            createWeatherIcon(weather.current.icon, iconContainer);
+            
+            // Wettervorhersage
+            const forecastDays = document.querySelectorAll('.forecast-day');
+            weather.forecast.forEach((forecast, index) => {
+                if (index < forecastDays.length) {
+                    const dayElement = forecastDays[index];
+                    dayElement.querySelector('.day-name').textContent = forecast.day;
+                    
+                    // Icon für den Tag
+                    const dayIconContainer = dayElement.querySelector('.day-icon');
+                    dayIconContainer.innerHTML = ''; // Leere den Container zuerst
+                    createWeatherIcon(forecast.icon, dayIconContainer);
+                    
+                    dayElement.querySelector('.day-temp').textContent = `${forecast.temp_day}°`;
+                    dayElement.querySelector('.night-temp').textContent = `${forecast.temp_night}°`;
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Fehler beim Laden der Wetterdaten:', error);
+            // Zeige Fehlermeldung an
+            document.getElementById('weather-time').textContent = 'Fehler';
+            document.getElementById('temp-value').textContent = '--';
+            document.getElementById('feels-like').textContent = 'Daten nicht verfügbar';
+        });
+}
+
+// Wetterdaten alle 30 Sekunden aktualisieren
+setInterval(updateWeather, 30000);
+// Initial laden
+updateWeather();
+
 // Initialisierung
 document.addEventListener('DOMContentLoaded', () => {
     // Initiale Anzeige der Uhrzeit

@@ -175,9 +175,9 @@ body {
 }
 
 .weather-icon {
-    width: 50px;
-    height: 50px;
-    margin-right: 10px;
+    width: 60px;
+    height: 60px;
+    margin-right: 15px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -234,8 +234,8 @@ body {
 }
 
 .day-icon {
-    width: 30px;
-    height: 30px;
+    width: 35px;
+    height: 35px;
     margin: 0 10px;
     display: flex;
     align-items: center;
@@ -256,16 +256,40 @@ body {
 .weather-icon svg, .day-icon svg {
     width: 100%;
     height: 100%;
+    stroke: #fff;
+    stroke-width: 2;
+    fill: none;
+    display: block;
 }
 
 .cloudy-icon {
-    fill: #aaa;
+    stroke: #fff;
+}
+
+.cloudy-icon path {
+    fill: #fff;
+    opacity: 0.8;
 }
 
 .sunny-icon {
-    fill: #f9d71c;
+    stroke: #fff;
+    fill: #fff;
+}
+
+.sunny-icon circle {
+    fill: #fff;
+    opacity: 0.9;
+}
+
+.sunny-icon line {
+    stroke-width: 2;
 }
 
 .rainy-icon {
-    fill: #5dabf4;
+    stroke: #fff;
+}
+
+.rainy-icon path {
+    stroke-linecap: round;
+    stroke-width: 2;
 }

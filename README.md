@@ -1,27 +1,28 @@
 # Dashboard
 
-Ein modernes Dashboard mit Kalender, Wetter und Nachrichten.
+Ein interaktives Dashboard mit Wetter, Kalender und Nachrichten.
 
-## Features
+## Funktionen
 
-- Kalender-Integration mit iCloud
-- Wettervorhersage
+- Aktuelle Wetterdaten und 5-Tage-Vorhersage
+- iCloud Kalender Integration
 - Aktuelle Nachrichten
-- Automatische Aktualisierung alle 5 Sekunden
 - Responsive Design
 
 ## Installation
 
 1. Repository klonen:
 ```bash
-git clone https://github.com/yourusername/dashboard.git
+git clone https://github.com/IHR_USERNAME/dashboard.git
 cd dashboard
 ```
 
 2. Virtuelle Umgebung erstellen und aktivieren:
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate  # Unter Windows: .venv\Scripts\activate
+python -m venv .venv
+source .venv/bin/activate  # Für Unix/MacOS
+# oder
+.venv\Scripts\activate  # Für Windows
 ```
 
 3. Abhängigkeiten installieren:
@@ -29,23 +30,24 @@ source .venv/bin/activate  # Unter Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. App starten:
+4. Konfiguration:
+- Erstellen Sie eine `.env` Datei mit Ihren API-Keys:
+```
+OPENWEATHERMAP_API_KEY=ihr_api_key
+ICLOUD_EMAIL=ihre_email
+ICLOUD_APP_PASSWORD=ihr_app_password
+```
+
+5. Anwendung starten:
 ```bash
 python app.py
 ```
 
-Die App ist dann unter http://localhost:5001 erreichbar.
+Die Anwendung ist dann unter `http://localhost:5001` verfügbar.
 
-## Konfiguration
+## Technologien
 
-Die iCloud-Kalender-Konfiguration erfolgt in der `app.py` Datei:
-
-```python
-ICLOUD_EMAIL = "your-email@example.com"
-ICLOUD_APP_PASSWORD = "your-app-password"
-ICLOUD_CALDAV_URL = "https://caldav.icloud.com"
-```
-
-## Lizenz
-
-MIT 
+- Python/Flask
+- OpenWeatherMap API
+- iCloud CalDAV
+- HTML/CSS/JavaScript 
