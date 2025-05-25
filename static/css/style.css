@@ -104,28 +104,33 @@ body {
 /* News Section */
 .news-section {
     margin-top: auto;
-    padding-bottom: 20px;
-    text-align: center;
+    padding: 20px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    width: 100%;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .news-source {
-    font-size: 14px;
-    color: #aaa;
+    font-size: 0.8em;
+    color: #888;
     margin-bottom: 5px;
+    text-align: center;
 }
 
 .news-headline {
-    font-size: 24px;
+    font-size: 1.2em;
     font-weight: bold;
     margin-bottom: 10px;
+    text-align: center;
 }
 
 .news-content {
-    font-size: 16px;
+    font-size: 0.9em;
     line-height: 1.4;
-    color: #ddd;
-    max-width: 600px;
-    margin: 0 auto;
+    text-align: center;
 }
 
 /* Weather Section */
