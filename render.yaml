@@ -5,9 +5,9 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
     envVars:
-      - key: OPENWEATHERMAP_API_KEY
-        sync: false
       - key: ICLOUD_EMAIL
         sync: false
       - key: ICLOUD_APP_PASSWORD
+        sync: false
+      - key: OPENWEATHERMAP_API_KEY
         sync: false 
