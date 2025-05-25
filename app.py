@@ -195,6 +195,10 @@ def get_calendar_events():
                                         continue
                                     
                                     # In lokale Zeitzone umwandeln für Anzeige
+                                    # Für Dashboard ist die lokale Zeit des Servers meistens ok.
+                                    # Wenn du eine spezifische Zeitzone willst:
+                                    # local_tz = pytz.timezone('Europe/Berlin')
+                                    # dtstart_local = dtstart_utc.astimezone(local_tz)
                                     dtstart_local = dtstart_utc.astimezone() # Lokale Systemzeitzone
 
                                     # Datums- und Zeitanzeige Logik
@@ -223,6 +227,7 @@ def get_calendar_events():
                                                  time_display = f"{day_name} {event_date_local.day}. {event_time_str} Uhr"
                                             else:
                                                  time_display = f"{MONATE[event_date_local.month]} {event_date_local.day}. {event_time_str} Uhr"
+
 
                                     icon = default_icon
                                     for keyword, specific_icon in event_type_icons.items():
@@ -264,6 +269,7 @@ def get_example_calendar_events():
         {"title": "Geburtstag Mama", "time": "Morgen (Ganztägig)", "timestamp": (datetime.now() + timedelta(days=1)).replace(hour=0, minute=0).timestamp(), "icon": "👪", "all_day": True},
         {"title": "Konzertbesuch", "time": f"{MONATE[(datetime.now() + timedelta(days=5)).month]} {(datetime.now() + timedelta(days=5)).day}. 20:00 Uhr", "timestamp": (datetime.now() + timedelta(days=5)).replace(hour=20, minute=0).timestamp(), "icon": "🎵", "all_day": False},
     ]
+
 
 def get_weather_data():
     """Ruft Wetterdaten für die konfigurierte Stadt ab."""
@@ -474,6 +480,7 @@ def get_example_news_data():
         "content": "Dies ist ein Beispieltext, da keine echten Nachrichten abgerufen werden konnten. Markus Söder, Wurstfan, lässt sich das Grillen nicht entgehen."
     }
 
+
 @app.route('/')
 def index():
     """Hauptroute für das Dashboard."""
@@ -507,4 +514,4 @@ if __name__ == '__main__':
     if not ICLOUD_EMAIL or not ICLOUD_APP_PASSWORD:
         print("WARNUNG: ICLOUD_EMAIL oder ICLOUD_APP_PASSWORD nicht gesetzt. Kalenderdaten sind Beispiele.")
 
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
