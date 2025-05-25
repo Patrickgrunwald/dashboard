@@ -12,6 +12,7 @@ import re
 import caldav
 from caldav.elements import dav, cdav
 from dotenv import load_dotenv
+import urllib3
 
 # Lade Umgebungsvariablen
 load_dotenv()
@@ -68,6 +69,9 @@ def get_calendar_events():
         print("Versuche, Verbindung zum iCloud-Kalender herzustellen...")
         print(f"Verwende E-Mail: {ICLOUD_EMAIL}")
         print(f"Verwende CalDAV URL: {ICLOUD_CALDAV_URL}")
+        
+        # SSL-Warnungen unterdrücken
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
         
         # Verbindung zum iCloud CalDAV-Server herstellen
         client = caldav.DAVClient(
@@ -148,12 +152,15 @@ def get_calendar_events():
                                     icon = "👪"
                                 elif "patrick" in calendar_name:
                                     icon = "👤"
+                                elif "deejay" in calendar_name:
+                                    icon = "🎵"
                                 
                                 # Ereignis zum Array hinzufügen
                                 event_entry = {
                                     "title": summary,
                                     "time": date_display,
-                                    "icon": icon
+                                    "icon": icon,
+                                    "date": dtstart if isinstance(dtstart, date) else dtstart.date()
                                 }
                                 print(f"Füge Ereignis hinzu: {event_entry}")
                                 events.append(event_entry)
@@ -163,7 +170,7 @@ def get_calendar_events():
                 print(f"Fehler beim Abrufen von Ereignissen aus Kalender {calendar_name}: {e}")
         
         # Ereignisse nach Datum sortieren
-        events.sort(key=lambda x: x["time"])
+        events.sort(key=lambda x: x["date"])
         
         print(f"Insgesamt gefundene Ereignisse: {len(events)}")
         print("Ereignisse:", events)
