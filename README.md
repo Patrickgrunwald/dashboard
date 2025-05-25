@@ -1,13 +1,13 @@
 # Dashboard
 
-Ein interaktives Dashboard mit Wetter, Kalender und Nachrichten.
+Ein interaktives Dashboard, das Kalenderereignisse, Wetterdaten und Nachrichten anzeigt.
 
 ## Funktionen
 
-- Aktuelle Wetterdaten und 5-Tage-Vorhersage
-- iCloud Kalender Integration
+- Anzeige von iCloud-Kalenderereignissen
+- Aktuelle Wetterdaten und Vorhersage
 - Aktuelle Nachrichten
-- Responsive Design
+- Automatische Aktualisierung der Daten
 
 ## Installation
 
@@ -30,24 +30,30 @@ source .venv/bin/activate  # Für Unix/MacOS
 pip install -r requirements.txt
 ```
 
-4. Konfiguration:
-- Erstellen Sie eine `.env` Datei mit Ihren API-Keys:
+4. Umgebungsvariablen konfigurieren:
+Erstellen Sie eine `.env`-Datei im Projektverzeichnis mit folgenden Variablen:
 ```
-OPENWEATHERMAP_API_KEY=ihr_api_key
-ICLOUD_EMAIL=ihre_email
-ICLOUD_APP_PASSWORD=ihr_app_password
+ICLOUD_EMAIL=ihre.email@example.com
+ICLOUD_APP_PASSWORD=ihr-app-passwort
+OPENWEATHERMAP_API_KEY=ihr-api-key
 ```
 
-5. Anwendung starten:
+## Verwendung
+
+1. Server starten:
 ```bash
 python app.py
 ```
 
-Die Anwendung ist dann unter `http://localhost:5001` verfügbar.
+2. Dashboard im Browser öffnen:
+```
+http://localhost:5001
+```
 
 ## Technologien
 
 - Python/Flask
+- JavaScript
+- iCloud CalDAV API
 - OpenWeatherMap API
-- iCloud CalDAV
-- HTML/CSS/JavaScript 
+- RSS Feeds für Nachrichten 

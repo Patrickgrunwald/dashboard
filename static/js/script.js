@@ -54,7 +54,19 @@ function createWeatherIcon(type, container) {
 // Kalendereinträge anzeigen
 function displayCalendarEntries(entries) {
     const container = document.getElementById('calendar-entries');
+    if (!container) {
+        console.error('Kalender-Container nicht gefunden');
+        return;
+    }
+    
     container.innerHTML = '';
+    
+    if (!entries || entries.length === 0) {
+        console.log('Keine Kalendereinträge vorhanden');
+        return;
+    }
+    
+    console.log('Zeige Kalendereinträge:', entries);
     
     entries.forEach(entry => {
         const entryDiv = document.createElement('div');
@@ -115,57 +127,42 @@ function fetchDashboardData() {
             return response.json();
         })
         .then(data => {
+            console.log('Empfangene Daten:', data);  // Debug-Logging
+
             // Aktuelle Wetterdaten
             const currentWeather = data.weather.current;
             document.getElementById('temp-value').textContent = `${currentWeather.temperature}°C`;
             document.getElementById('feels-like').textContent = `Gefühlt: ${currentWeather.feels_like}°C`;
-            document.getElementById('wind-speed').textContent = `${currentWeather.wind_speed} km/h`;
-            document.getElementById('wind-direction').textContent = currentWeather.wind_direction;
+            document.getElementById('wind-value').textContent = `${currentWeather.wind_speed} km/h`;
             document.getElementById('weather-time').textContent = currentWeather.time;
-            document.getElementById('weather-icon').className = `weather-icon ${currentWeather.icon}`;
+            createWeatherIcon(currentWeather.icon, document.getElementById('weather-icon'));
 
             // Wettervorhersage
-            const forecastContainer = document.getElementById('forecast-container');
-            forecastContainer.innerHTML = '';
-            data.weather.forecast.forEach(day => {
-                const forecastDay = document.createElement('div');
-                forecastDay.className = 'forecast-day';
-                forecastDay.innerHTML = `
-                    <div class="forecast-date">${day.day}</div>
-                    <div class="forecast-temp">
-                        <span class="temp-day">${day.temp_day}°</span>
-                        <span class="temp-night">${day.temp_night}°</span>
-                    </div>
-                    <div class="forecast-icon ${day.icon}"></div>
-                `;
-                forecastContainer.appendChild(forecastDay);
+            const forecastDays = document.querySelectorAll('.forecast-day');
+            data.weather.forecast.forEach((forecast, index) => {
+                if (index < forecastDays.length) {
+                    const dayElement = forecastDays[index];
+                    dayElement.querySelector('.day-name').textContent = forecast.day;
+                    createWeatherIcon(forecast.icon, dayElement.querySelector('.day-icon'));
+                    dayElement.querySelector('.day-temp').textContent = `${forecast.temp_day}°`;
+                    dayElement.querySelector('.night-temp').textContent = `${forecast.temp_night}°`;
+                }
             });
 
             // Kalenderereignisse
-            const eventsContainer = document.getElementById('events-container');
-            eventsContainer.innerHTML = '';
-            data.calendar.forEach(event => {
-                const eventElement = document.createElement('div');
-                eventElement.className = 'event';
-                eventElement.innerHTML = `
-                    <div class="event-time">${event.date} ${event.time}</div>
-                    <div class="event-title">${event.title}</div>
-                `;
-                eventsContainer.appendChild(eventElement);
-            });
+            if (data.calendar && Array.isArray(data.calendar)) {
+                console.log('Kalenderdaten gefunden:', data.calendar);  // Debug-Logging
+                displayCalendarEntries(data.calendar);
+            } else {
+                console.error('Keine gültigen Kalenderdaten gefunden:', data.calendar);
+            }
 
             // Nachrichten
-            const newsContainer = document.getElementById('news-container');
-            newsContainer.innerHTML = '';
-            data.news.forEach(news => {
-                const newsElement = document.createElement('div');
-                newsElement.className = 'news-item';
-                newsElement.innerHTML = `
-                    <div class="news-title">${news.title}</div>
-                    <div class="news-description">${news.description}</div>
-                `;
-                newsContainer.appendChild(newsElement);
-            });
+            if (data.news) {
+                document.getElementById('news-source').textContent = data.news.source;
+                document.getElementById('news-headline').textContent = data.news.headline;
+                document.getElementById('news-content').textContent = data.news.content;
+            }
         })
         .catch(error => {
             console.error('Fehler beim Abrufen der Dashboard-Daten:', error);

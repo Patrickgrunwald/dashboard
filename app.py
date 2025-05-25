@@ -66,11 +66,15 @@ def get_calendar_events():
     
     try:
         print("Versuche, Verbindung zum iCloud-Kalender herzustellen...")
+        print(f"Verwende E-Mail: {ICLOUD_EMAIL}")
+        print(f"Verwende CalDAV URL: {ICLOUD_CALDAV_URL}")
+        
         # Verbindung zum iCloud CalDAV-Server herstellen
         client = caldav.DAVClient(
             url=ICLOUD_CALDAV_URL,
             username=ICLOUD_EMAIL,
-            password=ICLOUD_APP_PASSWORD
+            password=ICLOUD_APP_PASSWORD,
+            ssl_verify_cert=False  # SSL-Zertifikatsprüfung deaktivieren
         )
         
         print("Verbindung hergestellt, rufe Hauptkalender ab...")
@@ -85,110 +89,84 @@ def get_calendar_events():
         # Kalendernamen ausgeben
         for cal in calendars:
             print(f"Kalender gefunden: {cal.name}")
+            print(f"Kalender URL: {cal.url}")
         
         # Aktuelle Zeit und Zeitraum für Ereignisse festlegen
         now = datetime.now()
         start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        end_date = start_date + timedelta(days=30)  # Ereignisse für die nächsten 30 Tage
+        end_date = start_date + timedelta(days=30)
         
-        # Kalender-Icons basierend auf Kalendertyp
-        calendar_icons = {
-            "Familie": "👪",
-            "Patrick": "👤",
-            "default": "👤"
-        }
-        
-        # Spezielle Icons für bestimmte Ereignistypen
-        event_type_icons = {
-            "hochzeit": "🎵",
-            "musik": "🎵",
-            "konzert": "🎵",
-            "tiktok": "👤",
-            "meeting": "👤",
-            "termin": "👤"
-        }
-        
-        # Durch alle Kalender iterieren und nach 'Familie' und 'Patrick' filtern
+        # Durch alle Kalender iterieren
         for calendar in calendars:
             calendar_name = calendar.name.lower() if calendar.name else ""
-            
             print(f"Prüfe Kalender: {calendar_name}")
             
-            # Nur die gewünschten Kalender verwenden
-            if "familie" in calendar_name or "patrick" in calendar_name or "icloud" in calendar_name:
-                print(f"Verwende Kalender: {calendar_name}")
+            try:
+                # Ereignisse im Zeitraum abrufen
+                print(f"Suche Ereignisse von {start_date} bis {end_date}")
+                calendar_events = calendar.date_search(start=start_date, end=end_date)
+                print(f"Gefundene Ereignisse: {len(calendar_events)}")
                 
-                # Icon basierend auf Kalendername festlegen
-                if "familie" in calendar_name:
-                    default_icon = calendar_icons["Familie"]
-                elif "patrick" in calendar_name:
-                    default_icon = calendar_icons["Patrick"]
-                else:
-                    default_icon = calendar_icons["default"]
-                
-                try:
-                    # Ereignisse im Zeitraum abrufen
-                    print(f"Suche Ereignisse von {start_date} bis {end_date}")
-                    calendar_events = calendar.date_search(start=start_date, end=end_date)
-                    print(f"Gefundene Ereignisse: {len(calendar_events)}")
-                    
-                    for event in calendar_events:
-                        try:
-                            # Ereignisdaten parsen
-                            event_data = event.data
-                            ical = icalendar.Calendar.from_ical(event_data)
-                            
-                            for component in ical.walk():
-                                if component.name == "VEVENT":
-                                    # Titel des Ereignisses
-                                    summary = str(component.get('summary', 'Unbekanntes Ereignis'))
-                                    print(f"Ereignis gefunden: {summary}")
-                                    
-                                    # Startzeit des Ereignisses
-                                    dtstart = component.get('dtstart').dt
-                                    
-                                    # Prüfen, ob es sich um ein ganztägiges Ereignis handelt
-                                    all_day = isinstance(dtstart, date) and not isinstance(dtstart, datetime)
-                                    
-                                    # Wenn es ein datetime-Objekt ist, sicherstellen, dass es ein Zeitzonenobjekt hat
-                                    if isinstance(dtstart, datetime) and dtstart.tzinfo is None:
-                                        dtstart = dtstart.replace(tzinfo=pytz.UTC)
-                                    
-                                    # Für ganztägige Ereignisse oder Ereignisse in der Zukunft
-                                    if all_day or (isinstance(dtstart, datetime) and dtstart.date() > now.date()):
-                                        # Datum formatieren
-                                        event_date = dtstart if isinstance(dtstart, date) else dtstart.date()
-                                        if event_date.month == now.month:
-                                            date_display = f"{MONATE[event_date.month]} {event_date.day}."
-                                        else:
-                                            date_display = f"{MONATE[event_date.month]} {event_date.day}."
+                for event in calendar_events:
+                    try:
+                        # Ereignisdaten parsen
+                        event_data = event.data
+                        ical = icalendar.Calendar.from_ical(event_data)
+                        
+                        for component in ical.walk():
+                            if component.name == "VEVENT":
+                                # Titel des Ereignisses
+                                summary = str(component.get('summary', 'Unbekanntes Ereignis'))
+                                print(f"Ereignis gefunden: {summary}")
+                                
+                                # Startzeit des Ereignisses
+                                dtstart = component.get('dtstart').dt
+                                
+                                # Prüfen, ob es sich um ein ganztägiges Ereignis handelt
+                                all_day = isinstance(dtstart, date) and not isinstance(dtstart, datetime)
+                                
+                                # Wenn es ein datetime-Objekt ist, sicherstellen, dass es ein Zeitzonenobjekt hat
+                                if isinstance(dtstart, datetime) and dtstart.tzinfo is None:
+                                    dtstart = dtstart.replace(tzinfo=pytz.UTC)
+                                
+                                # Für ganztägige Ereignisse oder Ereignisse in der Zukunft
+                                if all_day or (isinstance(dtstart, datetime) and dtstart.date() > now.date()):
+                                    # Datum formatieren
+                                    event_date = dtstart if isinstance(dtstart, date) else dtstart.date()
+                                    if event_date.month == now.month:
+                                        date_display = f"{MONATE[event_date.month]} {event_date.day}."
                                     else:
-                                        # Zeit formatieren für Ereignisse am selben Tag
-                                        time_str = dtstart.strftime("%H:%M")
-                                        date_display = f"{WOCHENTAGE[dtstart.weekday()]} um {time_str} Uhr"
-                                    
-                                    # Icon basierend auf Ereignistyp oder Kalendername festlegen
-                                    icon = default_icon
-                                    for keyword, specific_icon in event_type_icons.items():
-                                        if keyword in summary.lower():
-                                            icon = specific_icon
-                                            break
-                                    
-                                    # Ereignis zum Array hinzufügen
-                                    events.append({
-                                        "title": summary,
-                                        "time": f"{event_date.strftime('%d.%m.%Y')} {date_display}",
-                                        "icon": icon
-                                    })
-                        except Exception as e:
-                            print(f"Fehler beim Verarbeiten eines Ereignisses: {e}")
-                except Exception as e:
-                    print(f"Fehler beim Abrufen von Ereignissen aus Kalender {calendar_name}: {e}")
+                                        date_display = f"{MONATE[event_date.month]} {event_date.day}."
+                                else:
+                                    # Zeit formatieren für Ereignisse am selben Tag
+                                    time_str = dtstart.strftime("%H:%M")
+                                    date_display = f"{WOCHENTAGE[dtstart.weekday()]} um {time_str} Uhr"
+                                
+                                # Icon basierend auf Ereignistyp oder Kalendername festlegen
+                                icon = "📅"  # Standard-Icon
+                                if "familie" in calendar_name:
+                                    icon = "👪"
+                                elif "patrick" in calendar_name:
+                                    icon = "👤"
+                                
+                                # Ereignis zum Array hinzufügen
+                                event_entry = {
+                                    "title": summary,
+                                    "time": date_display,
+                                    "icon": icon
+                                }
+                                print(f"Füge Ereignis hinzu: {event_entry}")
+                                events.append(event_entry)
+                    except Exception as e:
+                        print(f"Fehler beim Verarbeiten eines Ereignisses: {e}")
+            except Exception as e:
+                print(f"Fehler beim Abrufen von Ereignissen aus Kalender {calendar_name}: {e}")
         
         # Ereignisse nach Datum sortieren
-        events.sort(key=lambda x: datetime.strptime(x["time"].split()[0], "%d.%m.%Y"), reverse=True)
+        events.sort(key=lambda x: x["time"])
         
         print(f"Insgesamt gefundene Ereignisse: {len(events)}")
+        print("Ereignisse:", events)
         
         # Wenn keine Ereignisse gefunden wurden, Beispieldaten zurückgeben
         if not events:
@@ -493,20 +471,56 @@ def index():
 @app.route('/api/data')
 def get_data():
     """API-Endpunkt, der alle Daten für das Dashboard bereitstellt."""
-    now = datetime.now()
-    
-    data = {
-        "datetime": {
-            "date": format_date_german(now),
-            "time": now.strftime("%H:%M"),
-            "seconds": now.strftime("%S")
-        },
-        "calendar": get_calendar_events(),
-        "weather": get_weather_data(),
-        "news": get_news_data()
-    }
-    
-    return jsonify(data)
+    try:
+        now = datetime.now()
+        print("Starte Datenabruf für Dashboard...")
+        
+        # Kalenderereignisse abrufen
+        print("Rufe Kalenderereignisse ab...")
+        calendar_events = get_calendar_events()
+        print(f"Kalenderereignisse abgerufen: {len(calendar_events)} Ereignisse")
+        
+        # Wetterdaten abrufen
+        print("Rufe Wetterdaten ab...")
+        weather_data = get_weather_data()
+        print("Wetterdaten abgerufen")
+        
+        # Nachrichten abrufen
+        print("Rufe Nachrichten ab...")
+        news_data = get_news_data()
+        print("Nachrichten abgerufen")
+        
+        data = {
+            "datetime": {
+                "date": format_date_german(now),
+                "time": now.strftime("%H:%M"),
+                "seconds": now.strftime("%S")
+            },
+            "calendar": calendar_events,
+            "weather": weather_data,
+            "news": news_data
+        }
+        
+        print("Alle Daten erfolgreich abgerufen")
+        return jsonify(data)
+        
+    except Exception as e:
+        print(f"Fehler beim Abrufen der Dashboard-Daten: {e}")
+        # Fallback-Daten zurückgeben
+        return jsonify({
+            "datetime": {
+                "date": format_date_german(now),
+                "time": now.strftime("%H:%M"),
+                "seconds": now.strftime("%S")
+            },
+            "calendar": get_example_calendar_events(),
+            "weather": get_fallback_weather_data(),
+            "news": {
+                "source": "System",
+                "headline": "Fehler beim Laden der Daten",
+                "content": "Bitte versuchen Sie es später erneut."
+            }
+        })
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
