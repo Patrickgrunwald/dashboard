@@ -24,6 +24,7 @@ wheels/
 venv/
 ENV/
 env/
+.venv
 
 # IDE
 .idea/
@@ -41,4 +42,4 @@ ehthumbs.db
 Thumbs.db
 
 # Environment variables
-.env 
+.env
