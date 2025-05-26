@@ -52,6 +52,7 @@ function displayCalendarEntries(entries) {
             <div class="calendar-entry-content">
                 <div class="calendar-entry-title">${entry.title}</div>
                 <div class="calendar-entry-time">${entry.time}</div>
+                <div class="calendar-entry-calendar">${entry.calendar}</div>
             </div>
         `;
         
@@ -85,13 +86,6 @@ function displayWeatherData(weather) {
     });
 }
 
-// Nachrichtendaten anzeigen
-function displayNewsData(news) {
-    document.getElementById('news-source').textContent = news.source;
-    document.getElementById('news-headline').textContent = news.headline;
-    document.getElementById('news-content').textContent = news.content;
-}
-
 // Daten vom Server abrufen
 function fetchDashboardData() {
     fetch('/api/data')
@@ -107,9 +101,6 @@ function fetchDashboardData() {
             
             // Wetterdaten anzeigen
             displayWeatherData(data.weather);
-            
-            // Nachrichtendaten anzeigen
-            displayNewsData(data.news);
         })
         .catch(error => {
             console.error('Fehler beim Abrufen der Daten:', error);

@@ -20,7 +20,7 @@ ICLOUD_APP_PASSWORD = os.environ.get("ICLOUD_APP_PASSWORD", "xgrw-qssx-ruch-cbcd
 ICLOUD_CALDAV_URL = "https://caldav.icloud.com"
 
 # OpenWeatherMap Konfiguration
-OPENWEATHERMAP_API_KEY = os.environ.get("0a2a868ed80b8df9e7308888e0c387cf") # Hole Key aus Umgebungsvariable
+OPENWEATHERMAP_API_KEY = "6a32dac6c38966d881b839bcf4b59b08"  # Direkter API Key
 WEATHER_CITY = "Mühlacker,DE" # Stadt für Wetterdaten
 
 # Deutsche Wochentage und Monate für Datumsformatierung
@@ -111,50 +111,42 @@ def get_calendar_events():
         calendars = principal.calendars()
         print(f"Gefundene Kalender: {len(calendars)}")
         
+        # Liste der bereits verarbeiteten Kalender-Namen
+        processed_calendars = set()
+        
         for cal in calendars:
+            calendar_name = cal.name.lower() if cal.name else "Unbenannter Kalender"
             print(f"Kalender gefunden: {cal.name}")
-        
-        now_dt = datetime.now(pytz.utc) # Zeitzonenbewusst für Vergleiche
-        start_date_dt = now_dt.replace(hour=0, minute=0, second=0, microsecond=0)
-        end_date_dt = start_date_dt + timedelta(days=30)
-        
-        calendar_icons = {
-            "Familie": "👪",
-            "Patrick": "👤",
-            "default": "👤"
-        }
-        
-        event_type_icons = {
-            "hochzeit": "🎵",
-            "musik": "🎵",
-            "konzert": "🎵",
-            "tiktok": "👤",
-            "meeting": "👤",
-            "termin": "👤"
-        }
-        
-        processed_event_uids = set() # Um Duplikate von wiederkehrenden Ereignissen zu vermeiden
-
-        for calendar in calendars:
-            calendar_name = calendar.name.lower() if calendar.name else ""
-            print(f"Prüfe Kalender: {calendar_name}")
             
-            relevant_calendars = ["familie", "patrick", "icloud"] # Schlüsselwörter für relevante Kalender
-            if any(keyword in calendar_name for keyword in relevant_calendars) or not calendar_name: # Auch Kalender ohne Namen prüfen (manchmal der Hauptkalender)
-
-                print(f"Verwende Kalender: {calendar.name or 'Unbenannter Kalender'}")
+            # Überspringe doppelte Kalender
+            if calendar_name in processed_calendars:
+                print(f"Überspringe doppelten Kalender: {cal.name}")
+                continue
                 
-                default_icon = calendar_icons["default"]
+            processed_calendars.add(calendar_name)
+            
+            # Relevante Kalender filtern
+            relevant_calendars = ["familie", "patrick", "icloud", "deejay"]
+            if any(keyword in calendar_name for keyword in relevant_calendars) or not calendar_name:
+                print(f"Verwende Kalender: {cal.name or 'Unbenannter Kalender'}")
+                
+                # Icon basierend auf Kalendername
+                default_icon = "👤"  # Standard-Icon
                 if "familie" in calendar_name:
-                    default_icon = calendar_icons["Familie"]
-                elif "patrick" in calendar_name:
-                    default_icon = calendar_icons["Patrick"]
+                    default_icon = "👪"
+                elif "deejay" in calendar_name:
+                    default_icon = "🎵"
                 
                 try:
+                    now_dt = datetime.now(pytz.utc)
+                    start_date_dt = now_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+                    end_date_dt = start_date_dt + timedelta(days=30)
+                    
                     print(f"Suche Ereignisse von {start_date_dt.date()} bis {end_date_dt.date()}")
-                    # Wichtig: caldav sucht mit datetime-Objekten
-                    calendar_events_raw = calendar.date_search(start=start_date_dt, end=end_date_dt, expand=True) # expand=True für wiederkehrende Termine
-                    print(f"Gefundene Ereignisse in '{calendar.name or 'Unbenannter Kalender'}': {len(calendar_events_raw)}")
+                    calendar_events_raw = cal.date_search(start=start_date_dt, end=end_date_dt, expand=True)
+                    print(f"Gefundene Ereignisse in '{cal.name or 'Unbenannter Kalender'}': {len(calendar_events_raw)}")
+                    
+                    processed_event_uids = set()
                     
                     for event_raw in calendar_events_raw:
                         try:
@@ -164,47 +156,37 @@ def get_calendar_events():
                             for component in ical.walk():
                                 if component.name == "VEVENT":
                                     uid = str(component.get('uid'))
-                                    # Wenn eine Instanz eines wiederkehrenden Ereignisses, kann die UID gleich sein,
-                                    # aber die RECURRENCE-ID unterscheidet sie. Wir fügen beide hinzu.
                                     event_instance_id = uid
                                     if component.get('recurrence-id'):
                                         event_instance_id += str(component.get('recurrence-id').dt)
-
+                                    
                                     if event_instance_id in processed_event_uids:
-                                        continue # Bereits verarbeitete Instanz überspringen
+                                        continue
                                     processed_event_uids.add(event_instance_id)
-
+                                    
                                     summary = str(component.get('summary', 'Unbekanntes Ereignis'))
                                     dtstart_obj = component.get('dtstart').dt
                                     
                                     # Normalisiere dtstart zu einem zeitzonenbewussten datetime-Objekt in UTC
-                                    if isinstance(dtstart_obj, date) and not isinstance(dtstart_obj, datetime): # Ganztägig
+                                    if isinstance(dtstart_obj, date) and not isinstance(dtstart_obj, datetime):
                                         dtstart_utc = datetime(dtstart_obj.year, dtstart_obj.month, dtstart_obj.day, 0, 0, 0, tzinfo=pytz.utc)
                                         all_day = True
                                     elif isinstance(dtstart_obj, datetime):
                                         if dtstart_obj.tzinfo is None:
-                                            dtstart_utc = pytz.utc.localize(dtstart_obj) # Annahme: naive Zeiten sind UTC oder lokale Zeit des Servers
+                                            dtstart_utc = pytz.utc.localize(dtstart_obj)
                                         else:
                                             dtstart_utc = dtstart_obj.astimezone(pytz.utc)
                                         all_day = False
-                                        # Überprüfen, ob es sich um ein ganztägiges Ereignis handelt, das als Mitternacht UTC dargestellt wird
                                         if dtstart_utc.hour == 0 and dtstart_utc.minute == 0 and dtstart_utc.second == 0 and component.get('X-APPLE-ALL-DAY') == 'TRUE':
                                             all_day = True
                                     else:
                                         print(f"Unbekannter Typ für dtstart: {type(dtstart_obj)} für Event {summary}")
                                         continue
                                     
-                                    # In lokale Zeitzone umwandeln für Anzeige
-                                    # Für Dashboard ist die lokale Zeit des Servers meistens ok.
-                                    # Wenn du eine spezifische Zeitzone willst:
-                                    # local_tz = pytz.timezone('Europe/Berlin')
-                                    # dtstart_local = dtstart_utc.astimezone(local_tz)
-                                    dtstart_local = dtstart_utc.astimezone() # Lokale Systemzeitzone
-
-                                    # Datums- und Zeitanzeige Logik
+                                    dtstart_local = dtstart_utc.astimezone()
                                     today_local = datetime.now().date()
                                     event_date_local = dtstart_local.date()
-
+                                    
                                     time_display = ""
                                     if all_day:
                                         if event_date_local == today_local:
@@ -215,7 +197,7 @@ def get_calendar_events():
                                             time_display = f"{WOCHENTAGE_LANG[event_date_local.weekday()].split(',')[0]} {event_date_local.day}."
                                             if event_date_local.month != today_local.month:
                                                 time_display = f"{MONATE[event_date_local.month]} {event_date_local.day}."
-                                    else: # Nicht ganztägig
+                                    else:
                                         event_time_str = dtstart_local.strftime("%H:%M")
                                         if event_date_local == today_local:
                                             time_display = f"Heute um {event_time_str} Uhr"
@@ -224,12 +206,21 @@ def get_calendar_events():
                                         else:
                                             day_name = WOCHENTAGE_LANG[event_date_local.weekday()].split(',')[0]
                                             if event_date_local.month == today_local.month:
-                                                 time_display = f"{day_name} {event_date_local.day}. {event_time_str} Uhr"
+                                                time_display = f"{day_name} {event_date_local.day}. {event_time_str} Uhr"
                                             else:
-                                                 time_display = f"{MONATE[event_date_local.month]} {event_date_local.day}. {event_time_str} Uhr"
-
-
+                                                time_display = f"{MONATE[event_date_local.month]} {event_date_local.day}. {event_time_str} Uhr"
+                                    
+                                    # Icon basierend auf Ereignistyp
                                     icon = default_icon
+                                    event_type_icons = {
+                                        "hochzeit": "🎵",
+                                        "musik": "🎵",
+                                        "konzert": "🎵",
+                                        "tiktok": "👤",
+                                        "meeting": "👤",
+                                        "termin": "👤"
+                                    }
+                                    
                                     for keyword, specific_icon in event_type_icons.items():
                                         if keyword in summary.lower():
                                             icon = specific_icon
@@ -238,27 +229,28 @@ def get_calendar_events():
                                     events.append({
                                         "title": summary,
                                         "time": time_display,
-                                        "timestamp": dtstart_utc.timestamp(), # Für Sortierung
+                                        "timestamp": dtstart_utc.timestamp(),
                                         "icon": icon,
-                                        "all_day": all_day
+                                        "all_day": all_day,
+                                        "calendar": cal.name or "Unbenannter Kalender"
                                     })
                         except Exception as e:
-                            print(f"Fehler beim Verarbeiten eines Ereignisses: {e} (Event Raw: {event_raw.url})")
+                            print(f"Fehler beim Verarbeiten eines Ereignisses: {e}")
                 except Exception as e:
-                    print(f"Fehler beim Abrufen von Ereignissen aus Kalender {calendar.name or 'Unbenannter Kalender'}: {e}")
+                    print(f"Fehler beim Abrufen von Ereignissen aus Kalender {cal.name or 'Unbenannter Kalender'}: {e}")
         
         # Ereignisse nach Zeitstempel sortieren
-        events.sort(key=lambda x: (x["timestamp"])) # Erst nach Zeit, dann ganztägige zuerst, wenn Zeit gleich ist
+        events.sort(key=lambda x: x["timestamp"])
         
         print(f"Insgesamt gefundene und verarbeitete Ereignisse: {len(events)}")
         
         if not events:
             print("Keine Kalenderereignisse gefunden, verwende Beispieldaten")
-            return get_example_calendar_events() # Rückgabe, um weitere Verarbeitung zu stoppen
+            return get_example_calendar_events()
             
     except Exception as e:
         print(f"Kritischer Fehler beim Abrufen der Kalendereinträge: {e}")
-        return get_example_calendar_events() # Rückgabe
+        return get_example_calendar_events()
     
     return events
 
@@ -286,7 +278,7 @@ def get_weather_data():
         # Aktuelles Wetter
         url_current = f"https://api.openweathermap.org/data/2.5/weather?q={WEATHER_CITY}&units=metric&lang=de&appid={OPENWEATHERMAP_API_KEY}"
         response_current = requests.get(url_current)
-        response_current.raise_for_status() # Löst HTTPError für schlechte Antworten (4XX oder 5XX)
+        response_current.raise_for_status()
         data_current = response_current.json()
 
         weather_data_result["current"] = {
@@ -296,51 +288,48 @@ def get_weather_data():
             "wind_direction": deg_to_cardinal(data_current['wind']['deg']),
             "description": data_current['weather'][0]['description'].capitalize(),
             "icon": map_owm_icon_to_simple(data_current['weather'][0]['icon']),
-            "humidity": data_current['main']['humidity'], # Luftfeuchtigkeit
+            "humidity": data_current['main']['humidity'],
             "city": data_current['name']
         }
         
-        # 5-Tage-Vorhersage (enthält Daten alle 3 Stunden)
-        # Wir müssen die Tages-Min/Max-Temperaturen aggregieren.
-        # Besser: One Call API (benötigt Lat/Lon, aber liefert direkt tägliche Vorhersage)
-        # Für Einfachheit hier erstmal mit /forecast, dann Aggregation:
+        # 5-Tage-Vorhersage mit der kostenlosen API
+        url_forecast = f"https://api.openweathermap.org/data/2.5/forecast?q={WEATHER_CITY}&units=metric&lang=de&appid={OPENWEATHERMAP_API_KEY}"
+        response_forecast = requests.get(url_forecast)
+        response_forecast.raise_for_status()
+        data_forecast = response_forecast.json()
 
-        # Schritt 1: Lat/Lon für OneCall API abrufen (nur einmal, oder wenn CITY sich ändert)
-        # Dieser Teil könnte ausgelagert und gecacht werden, falls die Stadt sich nicht oft ändert
-        geo_url = f"http://api.openweathermap.org/geo/1.0/direct?q={WEATHER_CITY}&limit=1&appid={OPENWEATHERMAP_API_KEY}"
-        geo_resp = requests.get(geo_url)
-        geo_resp.raise_for_status()
-        geo_data = geo_resp.json()
-        if not geo_data:
-            raise ValueError(f"Stadt {WEATHER_CITY} nicht gefunden.")
-        
-        lat = geo_data[0]['lat']
-        lon = geo_data[0]['lon']
+        # Gruppiere die Vorhersagen nach Tagen
+        daily_forecasts = {}
+        for item in data_forecast['list']:
+            date = datetime.fromtimestamp(item['dt']).date()
+            if date not in daily_forecasts:
+                daily_forecasts[date] = {
+                    'temp_min': float('inf'),
+                    'temp_max': float('-inf'),
+                    'icon': item['weather'][0]['icon'],
+                    'description': item['weather'][0]['description']
+                }
+            
+            daily_forecasts[date]['temp_min'] = min(daily_forecasts[date]['temp_min'], item['main']['temp_min'])
+            daily_forecasts[date]['temp_max'] = max(daily_forecasts[date]['temp_max'], item['main']['temp_max'])
 
-        # Schritt 2: OneCall API für tägliche Vorhersage
-        url_onecall = f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&exclude=current,minutely,hourly,alerts&units=metric&lang=de&appid={OPENWEATHERMAP_API_KEY}"
-        response_onecall = requests.get(url_onecall)
-        response_onecall.raise_for_status()
-        data_onecall = response_onecall.json()
-
-        today_weekday = datetime.now().weekday()
-
-        for i, daily_forecast in enumerate(data_onecall['daily'][:5]): # Nächste 5 Tage
-            day_dt = datetime.fromtimestamp(daily_forecast['dt'])
+        # Konvertiere die gruppierten Daten in das gewünschte Format
+        today = datetime.now().date()
+        for i, (date, forecast) in enumerate(sorted(daily_forecasts.items())[:5]):
             day_name = ""
-            if day_dt.date() == date.today():
+            if date == today:
                 day_name = "Heute"
-            elif day_dt.date() == date.today() + timedelta(days=1):
+            elif date == today + timedelta(days=1):
                 day_name = "Morgen"
             else:
-                day_name = WOCHENTAGE[day_dt.weekday()] # Verwendet die kurzen Wochentagsnamen
+                day_name = WOCHENTAGE[date.weekday()]
 
             weather_data_result["forecast"].append({
                 "day": day_name,
-                "temp_day": round(daily_forecast['temp']['day']),
-                "temp_night": round(daily_forecast['temp']['night']),
-                "icon": map_owm_icon_to_simple(daily_forecast['weather'][0]['icon']),
-                "description": daily_forecast['weather'][0]['description'].capitalize()
+                "temp_day": round(forecast['temp_max']),
+                "temp_night": round(forecast['temp_min']),
+                "icon": map_owm_icon_to_simple(forecast['icon']),
+                "description": forecast['description'].capitalize()
             })
         
         return weather_data_result
@@ -377,110 +366,6 @@ def get_example_weather_data():
         ]
     }
 
-def get_news_data():
-    """Ruft aktuelle Nachrichten aus Deutschland ab. Diese Funktion ist bereits dynamisch."""
-    try:
-        news_sources = [
-            "https://www.tagesschau.de/xml/rss2/",
-            "https://rss.sueddeutsche.de/rss/Topthemen",
-            "https://www.spiegel.de/schlagzeilen/tops/index.rss",
-            "https://www.zeit.de/news/index.rss",
-            # "https://www.faz.net/rss/aktuell/" # FAZ blockiert oft direkte Abfragen ohne User-Agent
-        ]
-        
-        headers = { # Einige Feeds benötigen einen User-Agent
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-
-        for source_url in news_sources:
-            try:
-                print(f"Versuche Nachrichten von: {source_url}")
-                # feedparser kann den User-Agent nicht direkt übergeben, daher requests nutzen, wenn feedparser Probleme hat
-                # Aber meistens geht es auch so. Für robustere Lösung:
-                # response = requests.get(source_url, headers=headers, timeout=10)
-                # response.raise_for_status()
-                # feed = feedparser.parse(response.content)
-                feed = feedparser.parse(source_url, agent=headers.get('User-Agent')) # agent-Parameter nutzen
-
-                if feed.bozo: # Prüfen, ob beim Parsen ein Fehler aufgetreten ist
-                    print(f"Bozo-Exception beim Parsen von {source_url}: {feed.bozo_exception}")
-                    # Manchmal sind die Daten trotzdem da
-                
-                if feed.entries and len(feed.entries) > 0:
-                    entry = feed.entries[0]
-                    
-                    source_name = feed.feed.get("title", "Unbekannte Quelle")
-                    published_time_parsed = None
-                    if 'published_parsed' in entry and entry.published_parsed:
-                        published_time_parsed = datetime.fromtimestamp(time.mktime(entry.published_parsed))
-                    elif 'updated_parsed' in entry and entry.updated_parsed:
-                        published_time_parsed = datetime.fromtimestamp(time.mktime(entry.updated_parsed))
-
-                    time_str = "unbekannte Zeit"
-                    if published_time_parsed:
-                        now = datetime.now(pytz.utc) # Zeitzonenbewusst
-                        # Mache published_time_parsed zeitzonenbewusst (nehme UTC an, wenn nicht vorhanden)
-                        if published_time_parsed.tzinfo is None:
-                            published_time_parsed = pytz.utc.localize(published_time_parsed)
-                        else:
-                            published_time_parsed = published_time_parsed.astimezone(pytz.utc)
-
-                        diff = now - published_time_parsed
-                        
-                        if diff.days > 1:
-                            time_str = f"vor {diff.days} Tagen"
-                        elif diff.days == 1:
-                            time_str = "gestern"
-                        elif diff.seconds // 3600 > 0:
-                            hours = diff.seconds // 3600
-                            time_str = f"vor {hours} Std." if hours > 1 else "vor 1 Std."
-                        elif diff.seconds // 60 > 0:
-                            minutes = diff.seconds // 60
-                            time_str = f"vor {minutes} Min." if minutes > 1 else "vor 1 Min."
-                        else:
-                            time_str = "gerade eben"
-                    
-                    title = entry.get('title', "Kein Titel")
-                    
-                    content = entry.get('summary', entry.get('description', ''))
-                    content = re.sub(r'<.*?>', '', content) # HTML-Tags entfernen
-                    content = content.strip()
-
-                    # Kürze den Inhalt, falls zu lang
-                    max_len = 150
-                    if len(content) > max_len:
-                        content = content[:max_len].rsplit(' ', 1)[0] + "..."
-                    
-                    if not content and title: # Wenn kein Inhalt, aber Titel, nimm Titel als Fallback
-                         content = "Weitere Informationen im Artikel."
-
-                    print(f"Nachricht gefunden: {title[:30]}... von {source_name}")
-                    return {
-                        "source": f"{source_name}, {time_str}",
-                        "headline": title,
-                        "content": content
-                    }
-            except requests.exceptions.RequestException as e:
-                print(f"Fehler beim Abrufen von {source_url} (Request Error): {e}")
-            except Exception as e:
-                print(f"Allgemeiner Fehler beim Verarbeiten von {source_url}: {e}")
-                continue
-        
-        print("Keine Nachrichten von RSS-Feeds erhalten. Verwende Beispiel-Nachrichten.")
-        return get_example_news_data()
-
-    except Exception as e:
-        print(f"Kritischer Fehler beim Abrufen der Nachrichten: {e}")
-        return get_example_news_data()
-
-def get_example_news_data():
-    return {
-        "source": "Süddeutsche Zeitung, vor einer Stunde",
-        "headline": "Beispiel-Nachricht: Söder grillt – Peta protestiert",
-        "content": "Dies ist ein Beispieltext, da keine echten Nachrichten abgerufen werden konnten. Markus Söder, Wurstfan, lässt sich das Grillen nicht entgehen."
-    }
-
-
 @app.route('/')
 def index():
     """Hauptroute für das Dashboard."""
@@ -498,8 +383,7 @@ def get_data():
             "seconds": now.strftime("%S")
         },
         "calendar": get_calendar_events(),
-        "weather": get_weather_data(),
-        "news": get_news_data()
+        "weather": get_weather_data()
     }
     
     return jsonify(data)
