@@ -380,6 +380,16 @@ def get_data():
     
     return jsonify(data)
 
+@app.route('/api/calendar')
+def get_calendar():
+    """API-Endpunkt für Kalenderdaten."""
+    return jsonify(get_calendar_events())
+
+@app.route('/api/weather')
+def get_weather():
+    """API-Endpunkt für Wetterdaten."""
+    return jsonify(get_weather_data())
+
 if __name__ == '__main__':
     # Für lokale Entwicklung kann man den Key auch direkt setzen, falls die Umgebungsvariable nicht geht
     # if not OPENWEATHERMAP_API_KEY:
