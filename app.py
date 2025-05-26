@@ -25,7 +25,7 @@ ICLOUD_APP_PASSWORD = os.environ.get("ICLOUD_APP_PASSWORD", "xgrw-qssx-ruch-cbcd
 ICLOUD_CALDAV_URL = "https://caldav.icloud.com"
 
 # OpenWeatherMap Konfiguration
-OPENWEATHERMAP_API_KEY = "6a32dac6c38966d881b839bcf4b59b08"  # Direkter API Key
+OPENWEATHERMAP_API_KEY = os.environ.get("OPENWEATHERMAP_API_KEY")  # API Key aus Umgebungsvariablen
 WEATHER_CITY = "Mühlacker,DE" # Stadt für Wetterdaten
 
 # Deutsche Wochentage und Monate für Datumsformatierung
