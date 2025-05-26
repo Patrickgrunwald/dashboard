@@ -11,6 +11,11 @@ import time
 import re
 import caldav
 from caldav.elements import dav, cdav
+from dotenv import load_dotenv
+
+# Set timezone to Berlin
+BERLIN_TZ = pytz.timezone('Europe/Berlin')
+pytz.timezone.default = BERLIN_TZ
 
 app = Flask(__name__)
 
@@ -58,9 +63,6 @@ MONATE = {
     12: "Dezember"
 }
 
-# Set timezone to Berlin
-TIMEZONE = pytz.timezone('Europe/Berlin')
-
 def format_date_german(dt_obj): # dt_obj statt date, um konsistent zu sein
     """Formatiert ein Datum im deutschen Format."""
     return f"{WOCHENTAGE_LANG[dt_obj.weekday()]}, {dt_obj.day}. {MONATE[dt_obj.month]} {dt_obj.year}"
@@ -100,7 +102,7 @@ def get_calendar_events():
         return get_example_calendar_events()
         
     try:
-        print("Versuche, Verbindung zum iCloud-Kalender herzustellen...")
+        print(f"Versuche, Verbindung zum iCloud-Kalender für {ICLOUD_EMAIL} herzustellen...")
         client = caldav.DAVClient(
             url=ICLOUD_CALDAV_URL,
             username=ICLOUD_EMAIL,
@@ -117,9 +119,38 @@ def get_calendar_events():
         # Liste der bereits verarbeiteten Kalender-Namen
         processed_calendars = set()
         
+        # Kalender-Icons Mapping
+        calendar_icons = {
+            "familie": "👪",
+            "familien": "👪",
+            "family": "👪",
+            "deejay": "🎵",
+            "musik": "🎵",
+            "konzert": "🎵",
+            "hochzeit": "💒",
+            "arbeit": "💼",
+            "business": "💼",
+            "meeting": "👥",
+            "termin": "📅",
+            "geburtstag": "🎂",
+            "geburtstage": "🎂",
+            "birthday": "🎂",
+            "urlaub": "🏖️",
+            "ferien": "🏖️",
+            "vacation": "🏖️",
+            "feiertag": "🎉",
+            "holiday": "🎉",
+            "erinnerung": "⏰",
+            "reminder": "⏰",
+            "wichtig": "⭐",
+            "important": "⭐",
+            "privat": "🔒",
+            "private": "🔒"
+        }
+        
         for cal in calendars:
             calendar_name = cal.name.lower() if cal.name else "Unbenannter Kalender"
-            print(f"Kalender gefunden: {cal.name}")
+            print(f"Verarbeite Kalender: {cal.name}")
             
             # Überspringe doppelte Kalender
             if calendar_name in processed_calendars:
@@ -127,135 +158,90 @@ def get_calendar_events():
                 continue
                 
             processed_calendars.add(calendar_name)
+            print(f"Verwende Kalender: {cal.name or 'Unbenannter Kalender'}")
             
-            # Relevante Kalender filtern
-            relevant_calendars = ["familie", "patrick", "icloud", "deejay"]
-            if any(keyword in calendar_name for keyword in relevant_calendars) or not calendar_name:
-                print(f"Verwende Kalender: {cal.name or 'Unbenannter Kalender'}")
+            # Icon basierend auf Kalendername
+            default_icon = "📅"  # Standard-Icon
+            for keyword, icon in calendar_icons.items():
+                if keyword in calendar_name:
+                    default_icon = icon
+                    break
+            
+            try:
+                now = datetime.now(BERLIN_TZ)
+                start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = start_date + timedelta(days=14)  # Zeige Events für die nächsten 14 Tage
                 
-                # Icon basierend auf Kalendername
-                default_icon = "👤"  # Standard-Icon
-                if "familie" in calendar_name:
-                    default_icon = "👪"
-                elif "deejay" in calendar_name:
-                    default_icon = "🎵"
+                print(f"Suche Ereignisse von {start_date.date()} bis {end_date.date()}")
+                calendar_events_raw = cal.date_search(start=start_date, end=end_date, expand=True)
+                print(f"Gefundene Ereignisse in '{cal.name or 'Unbenannter Kalender'}': {len(calendar_events_raw)}")
                 
-                try:
-                    now_dt = datetime.now(TIMEZONE)
-                    start_date_dt = now_dt.replace(hour=0, minute=0, second=0, microsecond=0)
-                    end_date_dt = start_date_dt + timedelta(days=30)
-                    
-                    print(f"Suche Ereignisse von {start_date_dt.date()} bis {end_date_dt.date()}")
-                    calendar_events_raw = cal.date_search(start=start_date_dt, end=end_date_dt, expand=True)
-                    print(f"Gefundene Ereignisse in '{cal.name or 'Unbenannter Kalender'}': {len(calendar_events_raw)}")
-                    
-                    processed_event_uids = set()
-                    
-                    for event_raw in calendar_events_raw:
-                        try:
-                            event_data = event_raw.data
-                            ical = icalendar.Calendar.from_ical(event_data)
-                            
-                            for component in ical.walk():
-                                if component.name == "VEVENT":
-                                    uid = str(component.get('uid'))
-                                    event_instance_id = uid
-                                    if component.get('recurrence-id'):
-                                        event_instance_id += str(component.get('recurrence-id').dt)
-                                    
-                                    if event_instance_id in processed_event_uids:
-                                        continue
-                                    processed_event_uids.add(event_instance_id)
-                                    
-                                    summary = str(component.get('summary', 'Unbekanntes Ereignis'))
-                                    dtstart_obj = component.get('dtstart').dt
-                                    
-                                    # Normalisiere dtstart zu einem zeitzonenbewussten datetime-Objekt in UTC
-                                    if isinstance(dtstart_obj, date) and not isinstance(dtstart_obj, datetime):
-                                        dtstart_utc = datetime(dtstart_obj.year, dtstart_obj.month, dtstart_obj.day, 0, 0, 0, tzinfo=pytz.utc)
-                                        all_day = True
-                                    elif isinstance(dtstart_obj, datetime):
-                                        if dtstart_obj.tzinfo is None:
-                                            dtstart_utc = pytz.utc.localize(dtstart_obj)
-                                        else:
-                                            dtstart_utc = dtstart_obj.astimezone(pytz.utc)
-                                        all_day = False
-                                        if dtstart_utc.hour == 0 and dtstart_utc.minute == 0 and dtstart_utc.second == 0 and component.get('X-APPLE-ALL-DAY') == 'TRUE':
-                                            all_day = True
+                for event_raw in calendar_events_raw:
+                    try:
+                        event_data = event_raw.data
+                        ical = icalendar.Calendar.from_ical(event_data)
+                        
+                        for component in ical.walk():
+                            if component.name == "VEVENT":
+                                summary = str(component.get('summary', 'Unbekanntes Ereignis'))
+                                dtstart = component.get('dtstart').dt
+                                
+                                # Konvertiere zu Berliner Zeit
+                                if isinstance(dtstart, datetime):
+                                    if dtstart.tzinfo is None:
+                                        dtstart = BERLIN_TZ.localize(dtstart)
                                     else:
-                                        print(f"Unbekannter Typ für dtstart: {type(dtstart_obj)} für Event {summary}")
-                                        continue
-                                    
-                                    dtstart_local = dtstart_utc.astimezone()
-                                    today_local = datetime.now().date()
-                                    event_date_local = dtstart_local.date()
-                                    
-                                    time_display = ""
-                                    if all_day:
-                                        if event_date_local == today_local:
-                                            time_display = "Heute (Ganztägig)"
-                                        elif event_date_local == today_local + timedelta(days=1):
-                                            time_display = "Morgen (Ganztägig)"
-                                        else:
-                                            time_display = f"{WOCHENTAGE_LANG[event_date_local.weekday()].split(',')[0]} {event_date_local.day}."
-                                            if event_date_local.month != today_local.month:
-                                                time_display = f"{MONATE[event_date_local.month]} {event_date_local.day}."
-                                    else:
-                                        event_time_str = dtstart_local.strftime("%H:%M")
-                                        if event_date_local == today_local:
-                                            time_display = f"Heute um {event_time_str} Uhr"
-                                        elif event_date_local == today_local + timedelta(days=1):
-                                            time_display = f"Morgen um {event_time_str} Uhr"
-                                        else:
-                                            day_name = WOCHENTAGE_LANG[event_date_local.weekday()].split(',')[0]
-                                            if event_date_local.month == today_local.month:
-                                                time_display = f"{day_name} {event_date_local.day}. {event_time_str} Uhr"
-                                            else:
-                                                time_display = f"{MONATE[event_date_local.month]} {event_date_local.day}. {event_time_str} Uhr"
-                                    
-                                    # Icon basierend auf Ereignistyp
-                                    icon = default_icon
-                                    event_type_icons = {
-                                        "hochzeit": "🎵",
-                                        "musik": "🎵",
-                                        "konzert": "🎵",
-                                        "tiktok": "👤",
-                                        "meeting": "👤",
-                                        "termin": "👤"
-                                    }
-                                    
-                                    for keyword, specific_icon in event_type_icons.items():
-                                        if keyword in summary.lower():
-                                            icon = specific_icon
-                                            break
-                                    
-                                    events.append({
-                                        "title": summary,
-                                        "time": time_display,
-                                        "timestamp": dtstart_utc.timestamp(),
-                                        "icon": icon,
-                                        "all_day": all_day,
-                                        "calendar": cal.name or "Unbenannter Kalender"
-                                    })
-                        except Exception as e:
-                            print(f"Fehler beim Verarbeiten eines Ereignisses: {e}")
-                except Exception as e:
-                    print(f"Fehler beim Abrufen von Ereignissen aus Kalender {cal.name or 'Unbenannter Kalender'}: {e}")
+                                        dtstart = dtstart.astimezone(BERLIN_TZ)
+                                
+                                # Formatiere die Zeit
+                                if isinstance(dtstart, date) and not isinstance(dtstart, datetime):
+                                    time_display = dtstart.strftime("%d.%m.%Y")
+                                    all_day = True
+                                    # Für Sortierung: Setze Zeit auf 00:00 für ganztägige Events
+                                    sort_time = datetime.combine(dtstart, datetime.min.time())
+                                    sort_time = BERLIN_TZ.localize(sort_time)
+                                else:
+                                    time_display = dtstart.strftime("%d.%m.%Y %H:%M")
+                                    all_day = False
+                                    sort_time = dtstart
+                                
+                                # Event-spezifisches Icon basierend auf Titel
+                                event_icon = default_icon
+                                for keyword, icon in calendar_icons.items():
+                                    if keyword in summary.lower():
+                                        event_icon = icon
+                                        break
+                                
+                                events.append({
+                                    "title": summary,
+                                    "time": time_display,
+                                    "calendar": cal.name or "Unbenannter Kalender",
+                                    "icon": event_icon,
+                                    "all_day": all_day,
+                                    "sort_time": sort_time  # Für Sortierung
+                                })
+                                
+                    except Exception as e:
+                        print(f"Fehler beim Verarbeiten eines Ereignisses: {e}")
+                        continue
+                        
+            except Exception as e:
+                print(f"Fehler beim Abrufen von Ereignissen aus Kalender {cal.name or 'Unbenannter Kalender'}: {e}")
+                continue
         
-        # Ereignisse nach Zeitstempel sortieren
-        events.sort(key=lambda x: x["timestamp"])
+        # Sortiere Events nach Datum und Zeit (nächste Termine zuerst)
+        events.sort(key=lambda x: x["sort_time"])
+        
+        # Entferne das sort_time Feld vor der Rückgabe
+        for event in events:
+            del event["sort_time"]
         
         print(f"Insgesamt gefundene und verarbeitete Ereignisse: {len(events)}")
+        return events
         
-        if not events:
-            print("Keine Kalenderereignisse gefunden, verwende Beispieldaten")
-            return get_example_calendar_events()
-            
     except Exception as e:
-        print(f"Kritischer Fehler beim Abrufen der Kalendereinträge: {e}")
-        return get_example_calendar_events()
-    
-    return events
+        print(f"Fehler beim Abrufen der Kalendereinträge: {e}")
+        return []
 
 def get_example_calendar_events():
     """Liefert Beispiel-Kalenderdaten zurück."""
@@ -334,6 +320,9 @@ def get_weather_data():
                 "icon": map_owm_icon_to_simple(forecast['icon']),
                 "description": forecast['description'].capitalize()
             })
+        
+        # Convert to Berlin timezone
+        now = datetime.now(BERLIN_TZ)
         
         return weather_data_result
 
