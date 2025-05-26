@@ -1,21 +1,117 @@
-// Aktuelles Datum und Uhrzeit anzeigen
-function updateDateTime() {
-    const now = new Date();
-    
-    // Datum formatieren
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    const dateStr = now.toLocaleDateString('de-DE', options);
-    
-    // Zeit formatieren
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const seconds = now.getSeconds().toString().padStart(2, '0');
-    
-    // DOM aktualisieren
-    document.getElementById('current-date').textContent = dateStr;
-    document.getElementById('current-time').textContent = `${hours}:${minutes}`;
-    document.getElementById('current-seconds').textContent = seconds;
+// Function to format date in German
+function formatDate(date) {
+    const options = { 
+        weekday: 'long', 
+        day: 'numeric', 
+        month: 'long',
+        timeZone: 'Europe/Berlin'
+    };
+    return date.toLocaleDateString('de-DE', options);
 }
+
+// Function to format time in German
+function formatTime(date) {
+    const options = { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        timeZone: 'Europe/Berlin'
+    };
+    return date.toLocaleTimeString('de-DE', options);
+}
+
+// Function to update the current time
+function updateCurrentTime() {
+    const now = new Date();
+    document.getElementById('current-time').textContent = formatTime(now);
+    document.getElementById('current-date').textContent = formatDate(now);
+}
+
+// Update time every second
+setInterval(updateCurrentTime, 1000);
+updateCurrentTime();
+
+// Function to display calendar events
+function displayCalendarData(events) {
+    const calendarContainer = document.getElementById('calendar-container');
+    calendarContainer.innerHTML = '';
+
+    if (events.length === 0) {
+        calendarContainer.innerHTML = '<div class="no-events">Keine Termine in den nächsten 7 Tagen</div>';
+        return;
+    }
+
+    events.forEach(event => {
+        const eventElement = document.createElement('div');
+        eventElement.className = 'calendar-entry';
+        
+        const eventContent = `
+            <div class="calendar-entry-icon">${event.icon}</div>
+            <div class="calendar-entry-content">
+                <div class="calendar-entry-title">${event.title}</div>
+                <div class="calendar-entry-time">${event.time}</div>
+                ${event.location ? `<div class="calendar-entry-location">${event.location}</div>` : ''}
+                <div class="calendar-entry-calendar">${event.calendar}</div>
+            </div>
+        `;
+        
+        eventElement.innerHTML = eventContent;
+        calendarContainer.appendChild(eventElement);
+    });
+}
+
+// Function to display weather data
+function displayWeatherData(weather) {
+    const weatherContainer = document.getElementById('weather-container');
+    weatherContainer.innerHTML = '';
+
+    weather.forEach(day => {
+        const weatherElement = document.createElement('div');
+        weatherElement.className = 'weather-day';
+        
+        const weatherContent = `
+            <div class="weather-date">${day.date}</div>
+            <div class="weather-icon">
+                <img src="http://openweathermap.org/img/wn/${day.icon}@2x.png" alt="${day.description}">
+            </div>
+            <div class="weather-temp">${day.temp_min}° - ${day.temp_max}°</div>
+            <div class="weather-desc">${day.description}</div>
+        `;
+        
+        weatherElement.innerHTML = weatherContent;
+        weatherContainer.appendChild(weatherElement);
+    });
+}
+
+// Function to fetch and update data
+function updateData() {
+    // Fetch calendar data
+    fetch('/api/calendar')
+        .then(response => response.json())
+        .then(data => {
+            displayCalendarData(data);
+        })
+        .catch(error => {
+            console.error('Error fetching calendar data:', error);
+            document.getElementById('calendar-container').innerHTML = 
+                '<div class="error">Fehler beim Laden der Kalenderdaten</div>';
+        });
+
+    // Fetch weather data
+    fetch('/api/weather')
+        .then(response => response.json())
+        .then(data => {
+            displayWeatherData(data);
+        })
+        .catch(error => {
+            console.error('Error fetching weather data:', error);
+            document.getElementById('weather-container').innerHTML = 
+                '<div class="error">Fehler beim Laden der Wetterdaten</div>';
+        });
+}
+
+// Update data every 5 minutes
+setInterval(updateData, 5 * 60 * 1000);
+updateData();
 
 // Wetter-Icons erstellen
 function createWeatherIcon(type, container) {
@@ -36,28 +132,6 @@ function createWeatherIcon(type, container) {
     }
     
     container.innerHTML = iconSvg;
-}
-
-// Kalendereinträge anzeigen
-function displayCalendarEntries(entries) {
-    const container = document.getElementById('calendar-entries');
-    container.innerHTML = '';
-    
-    entries.forEach(entry => {
-        const entryDiv = document.createElement('div');
-        entryDiv.className = 'calendar-entry';
-        
-        entryDiv.innerHTML = `
-            <div class="calendar-entry-icon">${entry.icon}</div>
-            <div class="calendar-entry-content">
-                <div class="calendar-entry-title">${entry.title}</div>
-                <div class="calendar-entry-time">${entry.time}</div>
-                <div class="calendar-entry-calendar">${entry.calendar}</div>
-            </div>
-        `;
-        
-        container.appendChild(entryDiv);
-    });
 }
 
 // Wetterdaten anzeigen

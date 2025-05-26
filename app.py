@@ -58,6 +58,9 @@ MONATE = {
     12: "Dezember"
 }
 
+# Set timezone to Berlin
+TIMEZONE = pytz.timezone('Europe/Berlin')
+
 def format_date_german(dt_obj): # dt_obj statt date, um konsistent zu sein
     """Formatiert ein Datum im deutschen Format."""
     return f"{WOCHENTAGE_LANG[dt_obj.weekday()]}, {dt_obj.day}. {MONATE[dt_obj.month]} {dt_obj.year}"
@@ -138,7 +141,7 @@ def get_calendar_events():
                     default_icon = "🎵"
                 
                 try:
-                    now_dt = datetime.now(pytz.utc)
+                    now_dt = datetime.now(TIMEZONE)
                     start_date_dt = now_dt.replace(hour=0, minute=0, second=0, microsecond=0)
                     end_date_dt = start_date_dt + timedelta(days=30)
                     
