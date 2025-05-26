@@ -5,3 +5,4 @@ pytz==2024.1
 feedparser==6.0.11
 caldav==1.5.0
 gunicorn==21.2.0
+python-dotenv==1.0.1
