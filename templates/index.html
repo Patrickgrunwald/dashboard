@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="dashboard">
+        <main>
+            <section class="weather-section">
+                <div class="datetime">
+                    <div class="date" id="current-date"></div>
+                    <div class="time" id="current-time"></div>
+                </div>
+                <h2>Wetter</h2>
+                <div class="current-weather">
+                    <div class="weather-main">
+                        <i class="weather-icon" id="current-weather-icon"></i>
+                        <div class="temperature">
+                            <span id="current-temp"></span>°C
+                        </div>
+                    </div>
+                    <div class="weather-details">
+                        <div class="detail">
+                            <i class="fas fa-wind"></i>
+                            <span id="wind-speed"></span> km/h
+                        </div>
+                        <div class="detail">
+                            <i class="fas fa-tint"></i>
+                            <span id="humidity"></span>%
+                        </div>
+                    </div>
+                </div>
+                <div class="forecast" id="weather-forecast"></div>
+            </section>
+
+            <section class="calendar-section">
+                <h2>Kalender</h2>
+                <div class="events" id="calendar-events"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html> 

@@ -1,0 +1,224 @@
+:root {
+    --primary-color: #ffffff;
+    --secondary-color: #1a1a1a;
+    --background-color: #2d2d2d;
+    --text-color: #ffffff;
+    --border-color: #404040;
+    --hover-color: #404040;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.dashboard {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.datetime {
+    background-color: var(--primary-color);
+    color: var(--secondary-color);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.date {
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.time {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+section {
+    background-color: var(--secondary-color);
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+h2 {
+    color: var(--primary-color);
+    margin: 1.5rem 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+/* Weather Styles */
+.current-weather {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.weather-main {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.weather-icon {
+    font-size: 3rem;
+    color: var(--primary-color);
+}
+
+.temperature {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.weather-details {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.detail {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--primary-color);
+}
+
+.forecast {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem;
+}
+
+.forecast-item {
+    text-align: center;
+    padding: 1rem;
+    background-color: var(--background-color);
+    border-radius: 6px;
+    color: var(--primary-color);
+}
+
+.forecast-item .day {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.forecast-item .temp {
+    font-size: 1.2rem;
+}
+
+.forecast-item i {
+    color: var(--primary-color);
+    margin: 0.5rem 0;
+}
+
+/* Calendar Styles */
+.events {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.event {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background-color: var(--background-color);
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.event:hover {
+    background-color: var(--hover-color);
+}
+
+.event-icon {
+    font-size: 1.5rem;
+    min-width: 2rem;
+    text-align: center;
+}
+
+.event-details {
+    flex-grow: 1;
+}
+
+.event-title {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    color: var(--primary-color);
+}
+
+.event-time {
+    font-size: 0.9rem;
+    color: #999;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    main {
+        grid-template-columns: 1fr;
+    }
+
+    .forecast {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .datetime {
+        margin: -1.5rem -1.5rem 1.5rem -1.5rem;
+        border-radius: 8px 8px 0 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard {
+        padding: 1rem;
+    }
+
+    .forecast {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .weather-details {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .datetime {
+        margin: -1rem -1rem 1rem -1rem;
+    }
+
+    .date {
+        font-size: 1rem;
+    }
+
+    .time {
+        font-size: 1.5rem;
+    }
+} 
