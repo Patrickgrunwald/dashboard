@@ -60,58 +60,6 @@ function displayCalendarData(events) {
 }
 
 // Function to display weather data
-function displayWeatherData(weather) {
-    const weatherContainer = document.getElementById('weather-container');
-    weatherContainer.innerHTML = '';
-
-    weather.forEach(day => {
-        const weatherElement = document.createElement('div');
-        weatherElement.className = 'weather-day';
-        
-        const weatherContent = `
-            <div class="weather-date">${day.date}</div>
-            <div class="weather-icon">
-                <img src="http://openweathermap.org/img/wn/${day.icon}@2x.png" alt="${day.description}">
-            </div>
-            <div class="weather-temp">${day.temp_min}° - ${day.temp_max}°</div>
-            <div class="weather-desc">${day.description}</div>
-        `;
-        
-        weatherElement.innerHTML = weatherContent;
-        weatherContainer.appendChild(weatherElement);
-    });
-}
-
-// Function to fetch and update data
-function updateData() {
-    // Fetch calendar data
-    fetch('/api/calendar')
-        .then(response => response.json())
-        .then(data => {
-            displayCalendarData(data);
-        })
-        .catch(error => {
-            console.error('Error fetching calendar data:', error);
-            document.getElementById('calendar-container').innerHTML = 
-                '<div class="error">Fehler beim Laden der Kalenderdaten</div>';
-        });
-
-    // Fetch weather data
-    fetch('/api/weather')
-        .then(response => response.json())
-        .then(data => {
-            displayWeatherData(data);
-        })
-        .catch(error => {
-            console.error('Error fetching weather data:', error);
-            document.getElementById('weather-container').innerHTML = 
-                '<div class="error">Fehler beim Laden der Wetterdaten</div>';
-        });
-}
-
-// Update data every 5 minutes
-setInterval(updateData, 5 * 60 * 1000);
-updateData();
 
 // Wetter-Icons erstellen
 function createWeatherIcon(type, container) {
@@ -171,7 +119,7 @@ function fetchDashboardData() {
             document.getElementById('current-seconds').textContent = data.datetime.seconds;
             
             // Kalendereinträge anzeigen
-            displayCalendarEntries(data.calendar);
+            displayCalendarData(data.calendar);
             
             // Wetterdaten anzeigen
             displayWeatherData(data.weather);

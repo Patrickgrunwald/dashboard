@@ -28,7 +28,9 @@ ICLOUD_APP_PASSWORD = os.environ.get("ICLOUD_APP_PASSWORD", "xgrw-qssx-ruch-cbcd
 ICLOUD_CALDAV_URL = "https://caldav.icloud.com"
 
 # OpenWeatherMap Konfiguration
-OPENWEATHERMAP_API_KEY = os.environ.get("OPENWEATHERMAP_API_KEY")  # API Key aus Umgebungsvariablen
+OPENWEATHERMAP_API_KEY = os.environ.get(
+    "OPENWEATHERMAP_API_KEY", "0a2a868ed80b8df9e7308888e0c387cf"
+)  # API Key aus Umgebungsvariablen
 WEATHER_CITY = "Mühlacker,DE" # Stadt für Wetterdaten
 
 # Deutsche Wochentage und Monate für Datumsformatierung
@@ -245,7 +247,7 @@ def get_calendar_events():
         
     except Exception as e:
         print(f"Fehler beim Abrufen der Kalendereinträge: {e}")
-        return []
+        return get_example_calendar_events()
 
 def get_example_calendar_events():
     """Liefert Beispiel-Kalenderdaten zurück."""
