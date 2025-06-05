@@ -47,7 +47,7 @@ python3 app.py
 
 2. Dashboard im Browser öffnen:
 ```
-http://localhost:5001
+http://localhost:5000
 ```
 
 ## Technologien
