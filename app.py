@@ -70,7 +70,8 @@ def format_date_german(dt_obj): # dt_obj statt date, um konsistent zu sein
     """Formatiert ein Datum im deutschen Format."""
     return f"{WOCHENTAGE_LANG[dt_obj.weekday()]}, {dt_obj.day}. {MONATE[dt_obj.month]} {dt_obj.year}"
 
-def format_time_german(time_obj): # dt_obj statt time
+# time_obj statt time
+def format_time_german(time_obj):
     """Formatiert eine Uhrzeit im deutschen Format."""
     return f"{time_obj.hour}:{time_obj.minute:02d} Uhr"
 
