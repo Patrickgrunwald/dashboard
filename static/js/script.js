@@ -192,10 +192,10 @@ function setupAutoRefresh() {
 // Initialisierung
 document.addEventListener('DOMContentLoaded', () => {
     // Initiale Anzeige der Uhrzeit
-    updateDateTime();
-    
+    updateCurrentTime();
+
     // Uhrzeit jede Sekunde aktualisieren
-    setInterval(updateDateTime, 1000);
+    setInterval(updateCurrentTime, 1000);
     
     // Daten vom Server abrufen
     fetchDashboardData();
