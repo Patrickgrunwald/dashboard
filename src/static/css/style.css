@@ -10,6 +10,7 @@ body {
     color: #fff;
     height: 100vh;
     overflow: hidden;
+    filter: invert(1) hue-rotate(180deg);
 }
 
 .container {
@@ -266,3 +267,12 @@ body {
 .rainy-icon {
     fill: #5dabf4;
 }
+
+/* Keep icons in normal colors when the page is inverted */
+.calendar-entry-icon,
+.weather-icon svg,
+.day-icon svg,
+.weather-icon img {
+    filter: invert(1) hue-rotate(180deg);
+}
+

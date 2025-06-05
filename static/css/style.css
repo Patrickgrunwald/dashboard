@@ -9,6 +9,7 @@ body {
     background-color: #000;
     color: #fff;
     line-height: 1.6;
+    filter: invert(1) hue-rotate(180deg);
 }
 
 /* Dashboard layout */
@@ -188,3 +189,10 @@ body {
         margin-top: 10px;
     }
 }
+
+/* Keep icons in normal colors when the page is inverted */
+.calendar-entry-icon,
+.weather-icon img {
+    filter: invert(1) hue-rotate(180deg);
+}
+
