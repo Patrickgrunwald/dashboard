@@ -1,21 +1,24 @@
 from flask import Flask, render_template, jsonify
 import requests
 import icalendar
-import datetime # Keep this top-level import
+import datetime  # Keep this top-level import
 import pytz
 import json
 import os
 import feedparser
-from datetime import datetime, timedelta, date # Specific imports from datetime
+from datetime import datetime, timedelta, date  # Specific imports from datetime
 import time
 import re
 import caldav
 from caldav.elements import dav, cdav
 from dotenv import load_dotenv
 
+load_dotenv()  # Load environment variables from a .env file if present
+
 # Set timezone to Berlin
-BERLIN_TZ = pytz.timezone('Europe/Berlin')
-pytz.timezone.default = BERLIN_TZ
+BERLIN_TZ = pytz.timezone("Europe/Berlin")
+os.environ["TZ"] = "Europe/Berlin"
+time.tzset()
 
 app = Flask(__name__)
 
