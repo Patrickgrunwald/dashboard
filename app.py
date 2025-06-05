@@ -13,6 +13,9 @@ import caldav
 from caldav.elements import dav, cdav
 from dotenv import load_dotenv
 
+# Load environment variables from a .env file if present
+load_dotenv()
+
 # Set timezone to Berlin
 BERLIN_TZ = pytz.timezone('Europe/Berlin')
 pytz.timezone.default = BERLIN_TZ
