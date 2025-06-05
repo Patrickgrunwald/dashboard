@@ -247,7 +247,7 @@ def get_calendar_events():
         
     except Exception as e:
         print(f"Fehler beim Abrufen der Kalendereinträge: {e}")
-        return []
+        return get_example_calendar_events()
 
 def get_example_calendar_events():
     """Liefert Beispiel-Kalenderdaten zurück."""
